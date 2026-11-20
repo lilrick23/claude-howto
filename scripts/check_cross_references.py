@@ -3,6 +3,7 @@
 
 import re
 import sys
+import unicodedata
 from pathlib import Path
 
 IGNORE_DIRS = {
@@ -15,6 +16,11 @@ IGNORE_DIRS = {
     ".agents",
 }
 IGNORE_FILES = {"README.backup.md"}
+
+# Unicode categories of combining marks (accents, Arabic hamza, Indic vowel
+# signs, ...). Python's \w does not match them, but GitHub keeps them in
+# heading ids.
+COMBINING_MARK_CATEGORIES = frozenset({"Mn", "Mc", "Me"})
 
 
 def iter_md_files():
@@ -37,13 +43,26 @@ def heading_to_anchor(heading: str) -> str:
         r"\U0000FE00-\U0000FE0F"  # Variation selectors
         r"\U0000200D"  # Zero-width joiner
         r"\U000000A9\U000000AE"  # (C) (R)
-        r"\U00002000-\U0000206F"  # General punctuation (some emoji-adjacent)
+        r"\U00002000-\U0000200B"  # General punctuation (some emoji-adjacent),
+        r"\U0000200D-\U0000206F"  # minus U+200C zero-width non-joiner (see below)
         r"]",
         "",
         heading,
     )
-    # 2. Remove punctuation but keep Unicode word chars, spaces, and hyphens
-    anchor = re.sub(r"[^\w\s-]", "", heading.lower(), flags=re.UNICODE)
+    # 2. Remove punctuation but keep Unicode word chars, spaces, hyphens,
+    #    U+200C zero-width non-joiner, and combining marks: Persian uses the
+    #    non-joiner inside words, and GitHub keeps both it and marks such as
+    #    U+0654 in heading ids, while Python's \w matches neither of them.
+    anchor = re.sub(
+        r"[^\w\s\U0000200C-]",
+        lambda match: (
+            match.group()
+            if unicodedata.category(match.group()) in COMBINING_MARK_CATEGORIES
+            else ""
+        ),
+        heading.lower(),
+        flags=re.UNICODE,
+    )
     # 3. Replace spaces with hyphens
     anchor = anchor.replace(" ", "-")
     # 4. Strip trailing hyphens (keep leading hyphens for emoji-prefixed headings)

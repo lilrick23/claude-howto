@@ -228,7 +228,7 @@ blog-draft/
 
 打包好的功能集合。
 
-### PR Review 插件（10 个文件）
+### PR Review 插件（11 个文件）
 
 ```text
 pr-review/
@@ -242,16 +242,16 @@ pr-review/
 │   ├── security-reviewer.md      # 安全专家
 │   ├── test-checker.md           # 测试专家
 │   └── performance-analyzer.md   # 性能专家
-├── mcp/
-│   └── github-config.json           # GitHub 集成
+├── .mcp.json                        # GitHub 集成
 ├── hooks/
+│   ├── hooks.json                   # Hook 注册
 │   └── pre-review.js                # 审查前校验
 └── README.md                     # 插件文档
 ```
 
 **功能**：安全分析、测试覆盖、性能影响
 
-**命令**：`/review-pr`、`/check-security`、`/check-tests`
+**命令**：`/pr-review:review-pr`、`/pr-review:check-security`、`/pr-review:check-tests`
 
 **安装**：`claude --plugin-dir ./07-plugins/pr-review` （在仓库根目录运行）
 
@@ -270,9 +270,8 @@ devops-automation/
 │   ├── deployment-specialist.md  # 部署专家
 │   ├── incident-commander.md     # 事件协调
 │   └── alert-analyzer.md         # 告警分析
-├── mcp/
-│   └── kubernetes-config.json       # Kubernetes 集成
 ├── hooks/
+│   ├── hooks.json                   # Hook 注册
 │   ├── pre-deploy.js                # 部署前检查
 │   └── post-deploy.js               # 部署后任务
 ├── scripts/
@@ -284,11 +283,11 @@ devops-automation/
 
 **功能**：Kubernetes 部署、回滚、监控、事件响应
 
-**命令**：`/deploy`、`/rollback`、`/status`、`/incident`
+**命令**：`/devops-automation:deploy`、`/devops-automation:rollback`、`/devops-automation:status`、`/devops-automation:incident`
 
 **安装**：`claude --plugin-dir ./07-plugins/devops-automation` （在仓库根目录运行）
 
-### Documentation 插件（14 个文件）
+### Documentation 插件（13 个文件）
 
 ```text
 documentation/
@@ -303,8 +302,7 @@ documentation/
 │   ├── api-documenter.md         # API 文档专家
 │   ├── code-commentator.md       # 代码注释专家
 │   └── example-generator.md      # 示例生成器
-├── mcp/
-│   └── github-docs-config.json      # GitHub 集成
+├── .mcp.json                        # GitHub 集成
 ├── templates/
 │   ├── api-endpoint.md           # API 端点模板
 │   ├── function-docs.md          # 函数文档模板
@@ -314,7 +312,7 @@ documentation/
 
 **功能**：API 文档、README 生成、文档同步、文档校验
 
-**命令**：`/generate-api-docs`、`/generate-readme`、`/sync-docs`、`/validate-docs`
+**命令**：`/documentation:generate-api-docs`、`/documentation:generate-readme`、`/documentation:sync-docs`、`/documentation:validate-docs`
 
 **安装**：`claude --plugin-dir ./07-plugins/documentation` （在仓库根目录运行）
 
@@ -392,9 +390,9 @@ documentation/
 #### Permission Modes
 - **default**：风险操作需要审批
 - **acceptEdits**：自动接受文件编辑，其他操作仍需审批
-- **plan**：只读分析，不做修改
+- **plan**：只调研并提出修改方案，不直接修改 — Claude 会读取文件、运行 shell 命令进行探索并编写计划；在你批准计划之前编辑一直被阻止（可使用 bypass permissions 的交互式终端会话除外）
 - **auto**：所有操作都执行，附带后台安全检查 — 由分类器审查命令和受保护目录的写入（通过 `autoMode` 设置对象配置）
-- **dontAsk**：只允许预先批准的工具 — 任何本来会弹出提示的调用都会被自动拒绝。Claude 只运行 `permissions.allow` 匹配项、只读 Bash 命令，以及被 `PreToolUse` hook 批准的调用
+- **dontAsk**：只允许预先批准的工具 — 任何本来会弹出提示的调用都会被自动拒绝。Claude 仍会运行工作目录内的文件读取、只读 Bash 命令，以及大多数由 `permissions.allow` 规则或 `PreToolUse` hook 批准的调用；你安装的 mod 也可以批准部分调用
 - **bypassPermissions**：全部接受（使用 `--permission-mode bypassPermissions` 或等效的 `--dangerously-skip-permissions` 启用）
 
 #### Headless Mode（`claude -p`）
@@ -590,9 +588,9 @@ claude-howto/
 │   │   │   ├── security-reviewer.md
 │   │   │   ├── test-checker.md
 │   │   │   └── performance-analyzer.md
-│   │   ├── mcp/
-│   │   │   └── github-config.json
+│   │   ├── .mcp.json
 │   │   ├── hooks/
+│   │   │   ├── hooks.json
 │   │   │   └── pre-review.js
 │   │   └── README.md
 │   ├── devops-automation/
@@ -607,9 +605,8 @@ claude-howto/
 │   │   │   ├── deployment-specialist.md
 │   │   │   ├── incident-commander.md
 │   │   │   └── alert-analyzer.md
-│   │   ├── mcp/
-│   │   │   └── kubernetes-config.json
 │   │   ├── hooks/
+│   │   │   ├── hooks.json
 │   │   │   ├── pre-deploy.js
 │   │   │   └── post-deploy.js
 │   │   ├── scripts/
@@ -629,8 +626,7 @@ claude-howto/
 │   │   │   ├── api-documenter.md
 │   │   │   ├── code-commentator.md
 │   │   │   └── example-generator.md
-│   │   ├── mcp/
-│   │   │   └── github-docs-config.json
+│   │   ├── .mcp.json
 │   │   ├── templates/
 │   │   │   ├── api-endpoint.md
 │   │   │   ├── function-docs.md
@@ -753,7 +749,7 @@ claude --permission-mode acceptEdits   # 自动接受编辑
 claude --permission-mode auto          # 自动批准安全操作
 
 # 以 headless 模式运行 CI/CD
-claude -p "Run tests and report results"
+claude -p "Run tests and report results" --permission-mode auto
 
 # 运行后台任务
 在后台运行测试
@@ -896,8 +892,8 @@ claude -p "Run tests and report results"
 
 ---
 
-**最后更新**：2026 年 10 月 18 日
-**Claude Code 版本**：2.1.302
+**最后更新**：2026 年 10 月 26 日
+**Claude Code 版本**：2.1.310
 **总示例数**：100+ 文件
 **分类数**：10 个功能
 **Hooks**：8 个自动化脚本
@@ -912,3 +908,5 @@ claude -p "Run tests and report results"
 - https://code.claude.com/docs/en/plugins/install
 - https://code.claude.com/docs/en/checkpointing
 - https://code.claude.com/docs/en/permission-modes
+- https://code.claude.com/docs/en/headless#auto-approve-tools
+- https://code.claude.com/docs/en/permission-modes#which-mode-a-non-interactive-run-starts-in

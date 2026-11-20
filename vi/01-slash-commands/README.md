@@ -65,7 +65,7 @@ Lệnh tích hợp sẵn là các lối tắt cho các hành động phổ biế
 | `/plan [description]` | Nhập chế độ lập kế hoạch |
 | `/plugin` | Quản lý plugins |
 | `/powerup` | Khám phá tính năng thông qua các bài học tương tác với demo hoạt hình |
-| `/privacy-settings` | Cài đặt quyền riêng tư (chỉ Pro/Max) |
+| `/privacy-settings` | Cài đặt quyền riêng tư (chỉ Pro/Max/Ultra) |
 | `/release-notes` | Xem changelog |
 | `/reload-plugins` | Tải lại các plugins hoạt động. Từ v2.1.221, hầu hết các lần cài đặt đều kích hoạt ngay, nên chỉ cần lệnh này khi bản tóm tắt cài đặt hiển thị `Run /reload-plugins to activate.` |
 | `/remote-control` | Điều khiển từ xa từ claude.ai (bí danh: `/rc`) |
@@ -79,7 +79,7 @@ Lệnh tích hợp sẵn là các lối tắt cho các hành động phổ biế
 | `/security-review` | Phân tích nhánh để tìm lỗ hổng bảo mật |
 | `/skills` | Liệt kê các skills có sẵn |
 | `/stats` | Trực quan hóa việc sử dụng hàng ngày, các phiên, chuỗi ngày |
-| `/stickers` | Đặt sticker Claude Code |
+| `/stickers` | Kiểm tra xem sticker Claude Code có sẵn không |
 | `/status` | Hiển thị phiên bản, mô hình, tài khoản |
 | `/statusline` | Cấu hình dòng trạng thái |
 | `/tasks` | Liệt kê/quản lý các tác vụ nền |
@@ -561,8 +561,8 @@ Nếu cả hai tồn tại với cùng tên, **skill sẽ được ưu tiên**. 
 
 ---
 
-**Cập Nhật Lần Cuối**: Ngày 18 tháng 10 năm 2026
-**Phiên Bản Claude Code**: 2.1.302
+**Cập Nhật Lần Cuối**: Ngày 1 tháng 11 năm 2026
+**Phiên Bản Claude Code**: 2.1.316
 **Nguồn**:
 - https://code.claude.com/docs/en/commands
 - https://code.claude.com/docs/en/output-styles
@@ -572,6 +572,7 @@ Nếu cả hai tồn tại với cùng tên, **skill sẽ được ưu tiên**. 
 - https://code.claude.com/docs/en/changelog#2-1-299
 - https://code.claude.com/docs/en/hooks#hook-lifecycle
 - https://code.claude.com/docs/en/skills
-**Các Mô Hình Tương Thích**: Claude Fable 5, Claude Opus 5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 4.5
+- https://code.claude.com/docs/en/feature-availability#ultra-plan
+**Các Mô Hình Tương Thích**: Claude Fable 5.2, Claude Fable 5.1, Claude Fable 5, Claude Opus 5.5, Claude Opus 5, Claude Sonnet 5.5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 5.5, Claude Haiku 4.5
 
 *Phần của series hướng dẫn [Claude How To](../)*

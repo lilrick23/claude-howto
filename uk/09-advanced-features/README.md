@@ -218,7 +218,7 @@ claude --model opusplan "design and implement the new API"
 
 **Автоматична активація**:
 - Увімкнено за замовчуванням для всіх моделей (Opus 4.6, Sonnet 4.6, Haiku 4.5)
-- Opus 4.6: Адаптивне міркування з рівнями зусиль: `low` (○), `medium` (◐), `high` (●), `max` (тільки Opus 4.6)
+- Opus 4.6: Адаптивне міркування з рівнями зусиль: `low` (○), `medium` (◐), `high` (●), `max`
 - Інші моделі: Фіксований бюджет до 31 999 токенів
 
 **Методи конфігурації**:
@@ -231,9 +231,9 @@ claude --model opusplan "design and implement the new API"
 export MAX_THINKING_TOKENS=1024
 ```
 
-**Рівень зусиль** (тільки Opus 4.6):
+**Рівень зусиль** (підтримується на моделях Fable, Opus 5.5, Sonnet 5.5, Haiku 5.5, Opus 5, Sonnet 5, Opus 4.8, Opus 4.7, Opus 4.6 та Sonnet 4.6 — не на Haiku 4.5):
 ```bash
-export CLAUDE_CODE_EFFORT_LEVEL=high   # low (○), medium (◐), high (●), або max (тільки Opus 4.6)
+export CLAUDE_CODE_EFFORT_LEVEL=high   # low (○), medium (◐), high (●), xhigh (моделі Fable, Opus 5.5, Sonnet 5.5, Haiku 5.5, Opus 5, Sonnet 5, Opus 4.8/4.7) або max
 ```
 
 **Прапорець CLI**:
@@ -246,7 +246,7 @@ claude --effort high "complex architectural review"
 /effort high
 ```
 
-> **Примітка:** Ключове слово "ultrathink" у промптах активує режим глибокого міркування. Рівні зусиль `low`, `medium`, `high` та `max` (тільки Opus 4.6) контролюють обсяг міркувань Claude.
+> **Примітка:** Ключове слово "ultrathink" у промптах активує режим глибокого міркування. Починаючи з v2.1.311, якщо ввести його в інтерактивному терміналі, воно також запускає цей хід із рівнем зусиль `xhigh` на Opus 5.5, Sonnet 5.5, Haiku 5.5, Fable 5.2 (v2.1.321+) та Fable 5.1 через API Anthropic (слово підсвічується веселкою, коли це можливо; введене під час роботи Claude, воно підвищує рівень для решти цього ходу; у VS Code — з v2.1.316). На Bedrock або інших моделях натомість задайте рівень зусиль. `CLAUDE_CODE_DISABLE_ULTRATHINK=1` (v2.1.316) вимикає це ключове слово. Рівні зусиль `low`, `medium`, `high` та `max` підтримуються на моделях Fable, Opus 5.5, Sonnet 5.5, Haiku 5.5, Opus 5, Sonnet 5, Opus 4.8, Opus 4.7, Opus 4.6 та Sonnet 4.6 (Haiku 4.5 не має жодного). `xhigh` доступний на моделях Fable, Opus 5.5, Sonnet 5.5, Haiku 5.5, Opus 5, Sonnet 5, Opus 4.8 та Opus 4.7. Рівень зусиль за замовчуванням — `medium` на Fable 5.2, Opus 5.5, Sonnet 5.5 та Haiku 5.5, `high` на Fable 5.1, Fable 5, Opus 5, Sonnet 5, Opus 4.8 (а також Opus 4.6 / Sonnet 4.6) і `xhigh` на Opus 4.7.
 
 ### Переваги розширеного мислення
 
@@ -334,7 +334,7 @@ This approach balances your current constraints (team size, timeline, DevOps res
 # Встановлення бюджету токенів мислення
 export MAX_THINKING_TOKENS=16000
 
-# Встановлення рівня зусиль (тільки Opus 4.6): low (○), medium (◐), high (●), або max (тільки Opus 4.6)
+# Встановлення рівня зусиль: low (○), medium (◐), high (●), xhigh (моделі Fable, Opus 5.5, Sonnet 5.5, Haiku 5.5, Opus 5, Sonnet 5, Opus 4.8/4.7) або max
 export CLAUDE_CODE_EFFORT_LEVEL=high
 ```
 
@@ -348,9 +348,12 @@ Auto Mode — це режим дозволів, який використову�
 
 ### Вимоги
 
-- **План**: Team, Enterprise або API (недоступно на планах Pro або Max)
-- **Модель**: Claude Sonnet 4.6 або Opus 4.6
-- **Провайдер**: Тільки Anthropic API (не підтримується на Bedrock, Vertex або Foundry)
+Auto mode доступний лише тоді, коли ваш акаунт відповідає всім цим вимогам:
+
+- **План**: усі плани
+- **Організація**: у Team та Enterprise auto mode доступний за замовчуванням. Адміністратори можуть вимкнути його для організації, встановивши `permissions.disableAutoMode` у `"disable"` у managed settings
+- **Модель**: в Anthropic API та Claude Platform on AWS — Claude Opus 4.6 або новіша, Sonnet 4.6 або новіша, Haiku 5.5 чи модель Fable. В Amazon Bedrock, Agent Platform від Google Cloud (Vertex AI), Microsoft Foundry та сесіях Claude apps gateway із виконаним входом — лише Claude Sonnet 5 або новіша, Opus 4.7 або новіша, Haiku 5.5 (v2.1.293+) і моделі Fable. Старіші моделі — Sonnet 4.5, Opus 4.5, Haiku 4.5 і моделі claude-3 — не підтримуються в жодного провайдера. За шлюзом в `ANTHROPIC_BASE_URL` auto mode відхиляє модель, чия назва в шлюзі містить "haiku", окрім `claude-haiku-5-5`, так само як відхиляє Haiku 4.5 (v2.1.323)
+- **Провайдер**: доступний за замовчуванням в Anthropic API, Claude Platform on AWS, Amazon Bedrock, Agent Platform від Google Cloud (Vertex AI), Microsoft Foundry та сесіях Claude apps gateway із виконаним входом. З v2.1.158 по v2.1.206 auto mode був вимкнений у всіх цих провайдерів, окрім Anthropic API та Claude Platform on AWS, доки ви не встановлювали `CLAUDE_CODE_ENABLE_AUTO_MODE=1`; v2.1.207 прибрала цю вимогу. Змінна й далі приймається для сумісності, але з v2.1.207 не має жодного ефекту
 - **Класифікатор**: Додаткова вартість токенів, окрім планів Enterprise та акаунтів Claude API, де v2.1.278+ виконує перевірку на боці сервера без оплати
 
 ### Увімкнення Auto Mode
@@ -455,7 +458,7 @@ python3 09-advanced-features/setup-auto-mode-permissions.py --include-git-write 
 | Опціональний запис у git | `Bash(git add:*)`, `Bash(git commit:*)`, `Bash(git checkout:*)`, `Bash(git switch:*)`, `Bash(git stash:*)`, `Bash(git tag:*)` |
 | Менеджери пакетів | `Bash(npm ci:*)`, `Bash(npm install:*)`, `Bash(pip install:*)`, `Bash(pip3 install:*)` |
 | Збірка та тести | `Bash(make:*)`, `Bash(pytest:*)`, `Bash(go test:*)` |
-| Звичайні shell-команди | `Bash(ls:*)`, `Bash(cat:*)`, `Bash(find:*)` |
+| Звичайні shell-команди | `Bash(ls:*)`, `Bash(cat:*)`, `Bash(wc:*)` |
 | GitHub CLI | `Bash(gh pr view:*)`, `Bash(gh pr create:*)`, `Bash(gh issue list:*)` |
 
 Небезпечні операції (`rm -rf`, `sudo`, force push, `DROP TABLE`, `terraform destroy` тощо) навмисно виключені. Скрипт ідемпотентний — повторний запуск не дублює правила.
@@ -559,7 +562,7 @@ export CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=true
 
 ## Заплановані завдання
 
-Заплановані завдання дозволяють автоматично запускати промпти за розкладом або як одноразові нагадування. Завдання привʼязані до сесії — вони працюють, поки Claude Code активний, і очищуються при завершенні сесії. Доступно з v2.1.72+.
+Заплановані завдання дозволяють автоматично запускати промпти за розкладом або як одноразові нагадування. Завдання привʼязані до сесії — вони спрацьовують лише поки Claude Code запущений. Коли ви відновлюєте сесію через `--resume` або `--continue`, Claude Code відновлює завдання, термін яких не минув, окрім одноразових завдань, час яких уже минув, і самокерованого `/loop` (запустіть `/loop` знову, щоб перезапустити його). Доступно з v2.1.72+.
 
 ### Команда `/loop`
 
@@ -592,18 +595,20 @@ in 45 minutes, run the integration tests
 
 **Обмеження та поведінка**:
 - До **50 запланованих завдань** на сесію
-- Привʼязані до сесії — очищуються при завершенні сесії
-- Повторювані завдання автоматично закінчуються через **3 дні**
+- Привʼязані до сесії — відновлюються через `--resume`/`--continue`, якщо термін не минув
+- Повторювані завдання автоматично закінчуються через **7 днів** після створення (спрацьовують востаннє, а потім видаляють себе)
 - Завдання спрацьовують лише під час роботи Claude Code — пропущені запуски не компенсуються
+
+> **Навички, що оголошують `allowed-tools` або хуки, спершу питають (v2.1.325)**: changelog додає, що заплановані завдання та `/loop` тепер питають дозволу перед запуском навички, яка оголошує `allowed-tools` або хуки; додайте `Skill(name)` до `permissions.allow`, щоб запускати її без нагляду. "Always allow" у хостах Desktop, IDE та SDK тепер пропонує окреме правило лише тоді, коли його збереження знову дозволило б цю команду, тож заплановане завдання, яке покладалося на таке правило, тепер може чекати на вас. Документація запланованих завдань ще не описує жодної з цих змін.
 
 ### Деталі поведінки
 
 | Аспект | Деталь |
 |--------|--------|
-| **Джитер повторюваних** | До 10% від інтервалу (макс. 15 хвилин) |
-| **Джитер одноразових** | До 90 секунд на межах :00/:30 |
+| **Джитер повторюваних** | Запуск із запізненням до половини проміжку до наступного запуску, щонайбільше 30 хвилин; завдання `*/5 * * * *` (його створює `/loop 5m`) не затримується і стартує на 15 секунд раніше |
+| **Джитер одноразових** | До 90 секунд раніше, якщо заплановано на `:00` або `:30` |
 | **Пропущені запуски** | Без компенсації — пропускаються, якщо Claude Code не працював |
-| **Збереження** | Не зберігаються між перезапусками |
+| **Збереження** | Відновлюються через `--resume`/`--continue`, окрім завдань із вичерпаним терміном, прострочених одноразових завдань і самокерованого `/loop`; пропущені запуски не надолужуються |
 
 ### Хмарні заплановані завдання
 
@@ -648,7 +653,7 @@ export CLAUDE_CODE_DISABLE_CRON=1
 | `bypassPermissions` | Усі дії, без перевірки дозволів (небезпечно) |
 | `dontAsk` | Виконуються лише попередньо затверджені інструменти; всі інші відхиляються |
 
-Перемикайте режими через `Shift+Tab` у CLI. Встановіть режим за замовчуванням через прапорець `--permission-mode` або налаштування `permissions.defaultMode`. Якщо режим дозволів не налаштовано, інтерактивні сесії в терміналі та VS Code починаючи з v2.1.284 запускаються в режимі auto на будь-якому плані та в будь-якого провайдера (у v2.1.283 так було лише у сторонніх провайдерів, як-от Bedrock, Agent Platform від Google Cloud і Foundry, або з вимкненою телеметрією); `permissions.defaultMode` і далі має пріоритет, а сесія, де режим auto недоступний, натомість запускається в режимі `default` (Manual). Починаючи з v2.1.302, сесії `claude -p` та Agent SDK, у яких не задано режим дозволів, запускаються в режимі `default` у сторонніх провайдерів, з вимкненою телеметрією або на свіжій інсталяції; передайте `--permission-mode auto`, щоб зберегти режим auto.
+Перемикайте режими через `Shift+Tab` у CLI. Встановіть режим за замовчуванням через прапорець `--permission-mode` або налаштування `permissions.defaultMode`. Якщо режим дозволів не налаштовано, інтерактивні сесії в терміналі та VS Code починаючи з v2.1.284 запускаються в режимі auto на будь-якому плані та в будь-якого провайдера (у v2.1.283 так було лише у сторонніх провайдерів, як-от Bedrock, Agent Platform від Google Cloud і Foundry, або з вимкненою телеметрією); `permissions.defaultMode` і далі має пріоритет. Коли прапорець `--permission-mode`, файл налаштувань або це значення за замовчуванням вибирає `auto`, але режим auto недоступний для сесії, сесія запускається в режимі `default` (Manual), який спершу питає; у v2.1.323 виправлено те, що `--permission-mode auto` і налаштування `defaultMode: auto` запускали таку сесію в режимі, який міг дозволяти більше. Починаючи з v2.1.302, запуск `claude -p` або Agent SDK, у якому не задано режим дозволів, стартує в режимі Manual (значення конфігурації `default`) і відхиляє виклики інструментів, які потребують схвалення; передайте `--permission-mode` (наприклад, `auto` або `acceptEdits`) або `--allowedTools`.
 
 ### Методи активації
 
@@ -759,7 +764,7 @@ Claude: [Auto-accepts file edits without asking]
 
 ```bash
 # Запуск конкретного завдання
-claude -p "Run all tests"
+claude -p "Run all tests" --permission-mode auto
 
 # Обробка переданого вмісту
 cat error.log | claude -p "Analyze these errors"
@@ -773,7 +778,7 @@ cat error.log | claude -p "Analyze these errors"
 
 ```bash
 # Запуск завдання з захопленням виводу
-claude -p "Run all tests and generate coverage report"
+claude -p "Run all tests and generate coverage report" --permission-mode auto
 
 # Зі структурованим виводом
 claude -p --output-format json "Analyze code quality"
@@ -1238,7 +1243,7 @@ Claude Code керує браузером у видимому вікні — в�
 
 ## Remote Control
 
-Remote Control дозволяє продовжити локально запущену сесію Claude Code з телефону, планшета або будь-якого браузера. Ваша локальна сесія продовжує працювати на вашому компʼютері — нічого не переміщується у хмару. Доступно на планах Pro, Max, Team та Enterprise (v2.1.51+).
+Remote Control дозволяє продовжити локально запущену сесію Claude Code з телефону, планшета або будь-якого браузера. Ваша локальна сесія продовжує працювати на вашому компʼютері — нічого не переміщується у хмару. Доступно на планах Pro, Max, Ultra, Team та Enterprise (v2.1.51+).
 
 ### Запуск Remote Control
 
@@ -1267,6 +1272,8 @@ claude remote-control --name "Auth Refactor"
 | `--verbose` | Показувати детальні логи зʼєднання |
 
 > **Примітка (v2.1.300)**: `claude remote-control` більше не приймає `--sandbox` чи `--no-sandbox` (вони ніколи не мали ефекту; передача будь-якого з них тепер завершується помилкою). Щоб запускати сесії Remote Control у пісочниці, встановіть `sandbox.enabled` у файлі налаштувань.
+
+> **Код виходу та посилання для спільного доступу (v2.1.325)**: changelog додає, що `claude remote-control` тепер завершується з кодом 4, коли зупиняється сам (запуски з однією сесією й надалі завершуються з 0), і з кодом 69, коли не може зареєструватися, тож менеджер служб може запустити його знову; документація Remote Control ще не описує ці коди. Якщо підключена сесія має посилання для спільного доступу або Claude Code не може це перевірити, `/resume` і `/teleport` відключають Remote Control, коли будь-яка з них відкриває іншу розмову, яку інакше бачили б люди з посиланням; виконайте `/remote-control`, щоб підключити нову розмову. Документація Remote Control датує перевірку посилання для спільного доступу v2.1.324; changelog наводить її у v2.1.325.
 
 ### Підключення до сесії
 
@@ -1313,7 +1320,7 @@ claude remote-control --name "Auth Refactor"
 
 ```bash
 # Створення нової веб-сесії з CLI
-claude --remote "implement the new API endpoints"
+claude --cloud "implement the new API endpoints"   # --remote — застарілий псевдонім
 ```
 
 Це запускає сесію Claude Code на claude.ai, до якої можна отримати доступ з будь-якого браузера.
@@ -1342,7 +1349,7 @@ claude --teleport
 
 ## Десктопний додаток
 
-Десктопний додаток Claude Code надає автономний додаток з візуальним переглядом diff, паралельними сесіями та інтегрованими конекторами. Доступний для macOS та Windows (плани Pro, Max, Team та Enterprise).
+Десктопний додаток Claude Code надає автономний додаток з візуальним переглядом diff, паралельними сесіями та інтегрованими конекторами. Доступний для macOS та Windows (плани Pro, Max, Ultra, Team та Enterprise).
 
 ### Встановлення
 
@@ -1367,7 +1374,7 @@ claude --teleport
 | **Перегляд diff** | Візуальний перегляд файл за файлом з inline-коментарями; Claude читає коментарі та вносить виправлення |
 | **Попередній перегляд додатку** | Автозапуск dev-серверів з вбудованим браузером для живої перевірки |
 | **Моніторинг PR** | Інтеграція GitHub CLI з автовиправленням помилок CI та автозлиттям при проходженні перевірок |
-| **Паралельні сесії** | Кілька сесій у бічній панелі з автоматичною ізоляцією Git worktree |
+| **Паралельні сесії** | Кілька сесій у бічній панелі; увімкніть кнопку **Worktree** під полем вводу, щоб дати сесії власний Git worktree (типово вимкнено) |
 | **Заплановані завдання** | Повторювані завдання (щогодини, щодня, у робочі дні, щотижня), що працюють при відкритому додатку |
 | **Багатий рендеринг** | Рендеринг коду, markdown та діаграм з підсвіткою синтаксису |
 
@@ -1461,15 +1468,18 @@ export CLAUDE_CODE_TASK_LIST_ID=my-project-sprint-3
 ### Як це працює
 
 - Підказки зʼявляються як напівпрозорий текст під вашим вводом
-- Натисніть `Tab` для прийняття підказки
-- Натисніть `Enter` для прийняття та негайної відправки
+- Натисніть `Tab` або `Right arrow`, щоб вставити підказку в поле вводу промпту, потім `Enter` для відправки
+- Почніть друкувати, щоб відхилити її
 - Підказки враховують контекст, використовуючи git-історію та стан розмови
+- **VS Code (v2.1.325)**: після відповіді Claude панель розширення може показати запропонований наступний промпт сірим курсивом у порожньому полі промпту. Натисніть `Tab`, щоб перетворити його на текст, який можна редагувати, а потім надішліть; натискання `Enter` до прийняття підказки не надсилає її. Кожна підказка використовує короткий фоновий запит, що зараховується до лімітів використання вашого плану або до витрат на API
 
 ### Вимкнення підказок промптів
 
 ```bash
 export CLAUDE_CODE_ENABLE_PROMPT_SUGGESTION=false
 ```
+
+Або встановіть `promptSuggestionEnabled` у `false` у файлі налаштувань чи вимкніть **Prompt suggestions** у `/config`. У VS Code задайте це в `~/.claude/settings.json`: нові розмови перестають показувати підказки, а відкриті — після виконання **Developer: Reload Window**. `CLAUDE_CODE_ENABLE_PROMPT_SUGGESTION` має пріоритет над цим налаштуванням, тож якщо ви встановили його в `true`, змініть на `false` там, де ви його задали.
 
 ---
 
@@ -1500,18 +1510,22 @@ claude -w
 ```json
 {
   "worktree": {
-    "sparsePaths": ["packages/my-package", "shared/"]
+    "sparsePaths": [".claude", "packages/my-package", "shared/"]
   }
 }
 ```
+
+Додайте `.claude`, щоб кожен worktree також отримував `.claude/settings.json` і `.claude/rules/` репозиторію.
 
 ### Інструменти та хуки Worktree
 
 | Елемент | Опис |
 |------|-------------|
 | `ExitWorktree` | Інструмент для виходу та очищення поточного робочого дерева |
-| `WorktreeCreate` | Подія хуку при створенні робочого дерева |
+| `WorktreeCreate` | Подія хуку при створенні робочого дерева. Нехай хук виводить реальний шлях: Claude Code відхиляє шлях, що проходить через символьне посилання нижче кореня репозиторію, і з v2.1.325 `EnterWorktree` теж |
 | `WorktreeRemove` | Подія хуку при видаленні робочого дерева |
+
+> **Ізольовані робочі дерева відхиляють деякі команди git (v2.1.325)**: changelog додає, що ізольованій сесії або агенту в робочому дереві тепер відмовляють у `git bisect run`, `git maintenance register|start` та командах налаштування `scalar`, і повідомляють, що й далі працює. Документація з робочих дерев цього ще не описує.
 
 ### Автоочищення
 
@@ -1532,7 +1546,7 @@ claude -w
 
 ### Увімкнення пісочниці
 
-**Слеш-команда** (зберігає ваш вибір у `.claude/settings.local.json` для цього проєкту):
+**Слеш-команда** (оберіть автоматичний дозвіл (auto-allow) або звичайні дозволи (regular permissions) на її вкладці **Mode**; зберігає ваш вибір у `.claude/settings.local.json` для цього проєкту):
 ```text
 /sandbox
 ```
@@ -1546,12 +1560,17 @@ claude --settings '{"sandbox": {"enabled": true}}'
 
 > Прапорців `claude --sandbox` / `--no-sandbox` не існує. Починаючи з v2.1.300, передача їх у `claude remote-control` завершується помилкою.
 
+> **Увімкнення пісочниці більше не пропускає запити дозволу (з v2.1.324 згідно з settings reference; changelog наводить це у v2.1.325)**: `sandbox.autoAllowBashIfSandboxed` тепер за замовчуванням `false`, тож Bash-команди в пісочниці проходять звичайний процес дозволів, і вирішують ваші правила allow та режим дозволів. Вкладка **Mode** у `/sandbox` називає це режимом звичайних дозволів (regular permissions); приклади з файлом налаштувань і для окремої сесії вище стартують у ньому. Щоб запускати команди в пісочниці без запиту дозволу (режим auto-allow), також встановіть `"autoAllowBashIfSandboxed": true` у блоці `sandbox`, наприклад `claude --settings '{"sandbox": {"enabled": true, "autoAllowBashIfSandboxed": true}}'`. У керованих налаштуваннях додайте його до блоку `sandbox` вашого керованого джерела з найвищим рангом.
+>
+> Auto-allow усе ж має обмеження: команди, які не можуть виконатися в пісочниці, проходять звичайний процес дозволів; правила `deny` та правила `ask` з обмеженням за вмістом, як-от `Bash(git push *)`, і далі діють, хоча просте правило ask `Bash` для команд у пісочниці пропускається, окрім режиму планування; `rm` або `rmdir`, спрямовані на критичний шлях (critical path), проходять звичайний процес дозволів; команди інструмента Monitor не схвалюються автоматично; а `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB` вимикає auto-allow. Деякі команди в пісочниці, як-от `FOO=bar npm test`, `make CC=clang` або `eval "ls"`, теж проходять звичайний процес дозволів, де вирішують ваші правила allow та режим дозволів. У режимі планування auto-allow не розширює схвалення. Повний перелік — у [Auto-allow mode](https://code.claude.com/docs/en/sandboxing#auto-allow-mode).
+
 ### Налаштування конфігурації
 
 | Налаштування | Опис |
 |---------|-------------|
 | `sandbox.enabled` | Увімкнути або вимкнути пісочницю |
-| `sandbox.failIfUnavailable` | Зупинитись, якщо пісочницю неможливо активувати |
+| `sandbox.failIfUnavailable` | Зупинитись, якщо пісочницю неможливо активувати. Claude Code у вебі, хмарні заплановані завдання та хмарні сесії Cowork запускаються попри це (v2.1.325): розміщений контейнер не має пісочниці для команд. Changelog додає це; settings reference ще цього не описує |
+| `sandbox.autoAllowBashIfSandboxed` | Запускати Bash-команди в пісочниці без запиту дозволу (режим auto-allow). За замовчуванням `false` з v2.1.324 згідно з settings reference (changelog наводить це у v2.1.325), тож команди в пісочниці проходять через ваші правила allow та режим дозволів; що й далі запитує дозвіл при `true`, див. у примітці вище |
 | `sandbox.filesystem.allowWrite` | Шляхи з дозволом на запис |
 | `sandbox.filesystem.allowRead` | Шляхи з дозволом на читання |
 | `sandbox.filesystem.denyRead` | Шляхи з забороною читання |
@@ -1578,6 +1597,7 @@ claude --settings '{"sandbox": {"enabled": true}}'
 - Bash-команди виконуються у пісочниці з обмеженим доступом до файлової системи
 - Мережевий доступ може бути ізольований для запобігання небажаним зовнішнім зʼєднанням
 - Працює разом з правилами дозволів для глибокого захисту
+- Записи з пісочниці в налаштування, навички, агенти, команди та хуки `.claude` відхиляються і в доданих директоріях, як і в теці запуску (v2.1.325; changelog додає це, а список захищених шляхів у документації пісочниці ще не згадує додані директорії)
 - На macOS Seatbelt блокує всі мережеві зʼєднання, крім зʼєднання з проксі пісочниці; `sandbox.enableWeakerNetworkIsolation` **послаблює** цю ізоляцію і потрібен лише для інструментів на кшталт Go CLI за MITM-проксі `httpProxyPort`
 
 ### Випадки використання
@@ -1805,6 +1825,8 @@ MCP-сервери проєкту розмістіть у `.mcp.json` у кор�
 }
 ```
 
+Для `PROJECT_DB_URL` використовуйте користувача бази даних лише для читання; налаштування лише для читання див. у [MCP → приклад із базою даних](../05-mcp/README.md).
+
 ---
 
 ## Agent Teams
@@ -1923,9 +1945,14 @@ claude --teammate-mode in-process
 - [Офіційна документація Agent Teams](https://code.claude.com/docs/en/agent-teams)
 
 ---
-**Останнє оновлення**: 18 жовтня 2026
-**Версія Claude Code**: 2.1.302
+**Останнє оновлення**: 14 листопада 2026
+**Версія Claude Code**: 2.1.325
 **Джерела**:
+- https://code.claude.com/docs/en/desktop#run-a-session-in-its-own-worktree
+- https://code.claude.com/docs/en/settings-reference#worktree-sparsepaths
+- https://code.claude.com/docs/en/model-config#use-ultrathink-for-one-off-deep-reasoning
+- https://code.claude.com/docs/en/feature-availability#ultra-plan
+- https://code.claude.com/docs/en/permission-modes#eliminate-prompts-with-auto-mode
 - https://code.claude.com/docs/en/permissions
 - https://code.claude.com/docs/en/auto-mode-classifier-billing
 - https://code.claude.com/docs/en/commands
@@ -1949,4 +1976,19 @@ claude --teammate-mode in-process
 - https://code.claude.com/docs/en/chrome
 - https://code.claude.com/docs/en/env-vars
 - https://code.claude.com/docs/en/changelog#2-1-302
-**Сумісні моделі**: Claude Sonnet 4.6, Claude Opus 4.6, Claude Haiku 4.5
+- https://code.claude.com/docs/en/permission-modes#which-mode-a-non-interactive-run-starts-in
+- https://code.claude.com/docs/en/mcp#example-query-your-postgresql-database
+- https://code.claude.com/docs/en/cli-reference#cli-flags
+- https://code.claude.com/docs/en/model-config#adjust-effort-level
+- https://code.claude.com/docs/en/scheduled-tasks#seven-day-expiry
+- https://code.claude.com/docs/en/scheduled-tasks#jitter
+- https://code.claude.com/docs/en/scheduled-tasks#limitations
+- https://code.claude.com/docs/en/changelog#2-1-323
+- https://code.claude.com/docs/en/settings-reference#sandbox-autoallowbashifsandboxed
+- https://code.claude.com/docs/en/sandboxing#auto-allow-mode
+- https://code.claude.com/docs/en/changelog#2-1-325
+- https://code.claude.com/docs/en/interactive-mode#prompt-suggestions
+- https://code.claude.com/docs/en/vs-code#use-or-turn-off-suggested-prompts
+- https://code.claude.com/docs/en/settings-reference#promptsuggestionenabled
+- https://code.claude.com/docs/en/remote-control#what-connected-devices-see
+**Сумісні моделі**: Claude Fable 5.2, Claude Fable 5.1, Claude Fable 5, Claude Opus 5.5, Claude Opus 5, Claude Sonnet 5.5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 5.5, Claude Haiku 4.5

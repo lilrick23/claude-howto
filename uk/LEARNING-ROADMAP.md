@@ -386,7 +386,7 @@ cp 04-subagents/*.md .claude/agents/
 
 ✅ Режим планування для складних функцій
 ✅ Точний контроль дозволів з 6 режимами (default, acceptEdits, plan, auto, dontAsk, bypassPermissions)
-✅ Розширене мислення через Alt+T / Option+T
+✅ Керування розширеним мисленням: `/effort` на моделях, які завжди використовують розширене мислення, Alt+T / Option+T на моделях, де мислення можна вимкнути
 ✅ Управління фоновими завданнями
 ✅ Автопам'ять для вивчених налаштувань
 ✅ Auto Mode з фоновим класифікатором безпеки
@@ -406,15 +406,16 @@ claude --permission-mode plan "analyze this codebase"
 claude --permission-mode acceptEdits "refactor the auth module"
 claude --permission-mode auto "implement the feature"
 
-# Вправа 3: Розширене мислення
-# Натисніть Alt+T (Option+T на macOS) під час сесії для перемикання
+# Вправа 3: Керування розширеним мисленням
+# Запустіть /effort і виберіть рівень; Opus 5.5, Sonnet 5.5, Haiku 5.5 і моделі Fable завжди використовують розширене мислення
+# Alt+T (Option+T на macOS) перемикає мислення лише на моделях, що це дозволяють, напр. claude-opus-5
 
 # Вправа 4: Розширений процес з контрольними точками
-# 1. Створіть контрольну точку "Clean state"
+# 1. Почніть із чистого стану (Claude Code автоматично створює контрольну точку для кожного запиту; назв вони не мають)
 # 2. Використайте режим планування для проєктування функції
 # 3. Реалізуйте з делегуванням субагенту
 # 4. Запустіть тести у фоні
-# 5. Якщо тести не пройшли — відкат до контрольної точки
+# 5. Якщо тести не пройшли — /rewind до контрольної точки перед кроком 2
 # 6. Спробуйте альтернативний підхід
 
 # Вправа 5: Auto mode (фоновий класифікатор безпеки)
@@ -426,7 +427,7 @@ export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
 
 # Вправа 7: Заплановані завдання
 /loop 5m /check-status
-# Завдання живуть лише в межах сесії; для постійного планування використовуйте Routines або заплановані завдання Desktop
+# Завдання живуть лише в межах сесії; для постійного планування використовуйте хмарні заплановані завдання (раніше — routines, через /schedule) або заплановані завдання Desktop
 
 # Вправа 8: Канали (research preview)
 # Канал — це MCP-сервер, що надсилає події у вашу запущену сесію
@@ -439,7 +440,7 @@ export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
 
 - [ ] Використано режим планування для складної функції
 - [ ] Налаштовано режими дозволів (plan, acceptEdits, auto, dontAsk)
-- [ ] Увімкнено розширене мислення з Alt+T / Option+T
+- [ ] Налаштовано рівень мислення через `/effort` (а на моделі, що це дозволяє, перемкнуто мислення з Alt+T / Option+T)
 - [ ] Використано auto mode з класифікатором безпеки
 - [ ] Використано фонові завдання для тривалих операцій
 - [ ] Досліджено канали, що надсилають зовнішні події в сесію
@@ -478,7 +479,7 @@ export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
 claude --plugin-dir ./07-plugins/pr-review  # з кореня репозиторію
 
 # Вправа 2: Print mode для CI/CD
-claude -p "Run all tests and generate report"
+claude -p "Run all tests and generate report" --permission-mode auto
 
 # Вправа 3: JSON-вивід для скриптів
 claude -p --output-format json "list all functions"
@@ -789,8 +790,8 @@ done
 
 ---
 
-**Останнє оновлення**: 18 жовтня 2026
-**Версія Claude Code**: 2.1.302
+**Останнє оновлення**: 26 жовтня 2026
+**Версія Claude Code**: 2.1.310
 **Джерела**:
 - https://code.claude.com/docs/en/hooks
 - https://code.claude.com/docs/en/agent-teams
@@ -800,6 +801,9 @@ done
 - https://code.claude.com/docs/en/remote-control
 - https://code.claude.com/docs/en/scheduled-tasks
 - https://code.claude.com/docs/en/commands
+- https://code.claude.com/docs/en/routines#where-the-name-routines-still-appears
+- https://code.claude.com/docs/en/headless#auto-approve-tools
+- https://code.claude.com/docs/en/permission-modes#which-mode-a-non-interactive-run-starts-in
 **Підтримується**: Контриб'ютори Claude How-To
 **Ліцензія**: Освітні цілі, вільне використання та адаптація
 

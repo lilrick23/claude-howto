@@ -47,7 +47,7 @@ Lệnh `/init` là cách nhanh nhất để thiết lập bộ nhớ dự án tr
 - Tạo một file CLAUDE.md mới trong dự án của bạn (thường tại `./CLAUDE.md` hoặc `./.claude/CLAUDE.md`)
 - Thiết lập các quy ước và hướng dẫn dự án
 - Thiết lập nền tảng cho tính liên tục của bối cảnh qua các phiên
-- Cung cấp cấu trúc mẫu để ghiêu chuẩn dự án của bạn
+- Cung cấp cấu trúc mẫu để ghi tiêu chuẩn dự án của bạn
 
 **Chế độ tương tác nâng cao:** Đặt `CLAUDE_CODE_NEW_INIT=1` để bật quy trình tương tác đa giai đoạn hướng dẫn bạn qua việc thiết lập dự án từng bước:
 
@@ -249,7 +249,7 @@ Claude Code sử dụng một hệ thống bộ nhớ phân cấp đa tầng. C�
 7. **Local Project Memory** - Tùy thích cụ thể dự án cá nhân
    - `./CLAUDE.local.md`
 
-> **Lưu ý**: `CLAUDE.local.md` không được đề cập trong [tài liệu chính thức](https://code.claude.com/docs/en/memory) tính đến tháng 3 năm 2026. Nó vẫn có thể hoạt động như một tính năng legacy. Đối với dự án mới, hãy cân nhắc sử dụng `~/.claude/CLAUDE.md` (cấp người dùng) hoặc `.claude/rules/` (cấp dự án, phạm vi đường dẫn) thay thế.
+> **Lưu ý**: `CLAUDE.local.md` được hỗ trợ đầy đủ và có trong [tài liệu chính thức](https://code.claude.com/docs/en/memory). Đặt ở thư mục gốc dự án, file này được tải cùng với `CLAUDE.md` và chứa các tùy thích cá nhân theo dự án không được commit vào version control. Hãy thêm `CLAUDE.local.md` vào `.gitignore`.
 
 8. **Auto Memory** - Các ghi chú và bài học tự động của Claude
    - `~/.claude/projects/<project>/memory/`
@@ -348,7 +348,7 @@ your-project/
 
 Các quy tắc được khám phá đệ quy trong thư mục `rules/`, bao gồm bất kỳ thư mục con nào. Các quy tắc cấp người dùng tại `~/.claude/rules/` được tải trước các quy tắc cấp dự án, cho phép các mặc định cá nhân mà các dự án có thể ghi đè.
 
-### Quy Tắc Cụ Theo Đường Dẫn Với YAML Frontmatter
+### Quy Tắc Cụ Thể Theo Đường Dẫn Với YAML Frontmatter
 
 Định nghĩa các quy tắc chỉ áp dụng cho các đường dẫn file cụ thể:
 
@@ -470,6 +470,8 @@ Auto memory yêu cầu **Claude Code v2.1.59 hoặc mới hơn**. Nếu bạn đ
 npm install -g @anthropic-ai/claude-code@latest
 ```
 
+> **Lưu ý**: Trên npm 12, vốn mặc định bỏ qua bước postinstall của Claude Code, lệnh này kết thúc với lỗi `Error: claude native binary not installed.` Hãy chuyển sang trình cài đặt native hoặc làm theo [Fix an npm 12 install](https://code.claude.com/docs/en/troubleshoot-install#fix-an-npm-12-install).
+
 ### Thư Mục Auto Memory Tùy Chỉnh
 
 Theo mặc định, auto memory được lưu trữ trong `~/.claude/projects/<project>/memory/`. Bạn có thể thay đổi vị trí này sử dụng cài đặt `autoMemoryDirectory` (có sẵn kể từ **v2.1.74**):
@@ -512,7 +514,7 @@ Auto memory có thể được kiểm soát qua biến môi trường `CLAUDE_CO
 | Giá Trị | Hành Vi |
 |-------|----------|
 | `0` | Buộc auto memory **bật** |
-| `1` | Buột auto memory **tắt** |
+| `1` | Buộc auto memory **tắt** |
 | *(chưa đặt)* | Hành vi mặc định (auto memory được bật) |
 
 ```bash
@@ -638,7 +640,7 @@ Claude sẽ tải CLAUDE.md từ thư mục bổ sung được chỉ định cù
 - Admin Panel: `/projects/admin`
 ```
 
-### Ví Dụ 2: Bộ Nhớ Cụ Theo Thư Mục
+### Ví Dụ 2: Bộ Nhớ Cụ Thể Theo Thư Mục
 
 **File:** `./src/api/CLAUDE.md`
 
@@ -1068,7 +1070,7 @@ Claude sẽ nhắc bạn chọn file bộ nhớ nào để cập nhật.
    EOF
    ```
 
-### Thiết Lập Bộ Nhớ Cụ Theo Thư Mục
+### Thiết Lập Bộ Nhớ Cụ Thể Theo Thư Mục
 
 1. **Tạo bộ nhớ cho các thư mục cụ thể:**
    ```bash
@@ -1122,7 +1124,7 @@ Claude sẽ nhắc bạn chọn file bộ nhớ nào để cập nhật.
 
 **Tải Bộ Nhớ:**
 
-- Tất cả các file bộ nhớ được tự động tải khi Claude Code khởi động
+- Các file CLAUDE.md tại thư mục làm việc và các thư mục cấp trên, các quy tắc không có phạm vi đường dẫn, và phần đầu của `MEMORY.md` được tự động tải khi Claude Code khởi động
 - Claude duyệt lên từ thư mục làm việc hiện tại để khám phá các file CLAUDE.md
 - Các file subtree được khám phá và tải theo bối cảnh khi truy cập các thư mục đó
 
@@ -1159,8 +1161,8 @@ Claude sẽ nhắc bạn chọn file bộ nhớ nào để cập nhật.
 
 ---
 
-**Cập Nhật Lần Cuối**: Ngày 18 tháng 10 năm 2026
-**Phiên Bản Claude Code**: 2.1.302
+**Cập Nhật Lần Cuối**: Ngày 1 tháng 11 năm 2026
+**Phiên Bản Claude Code**: 2.1.316
 **Nguồn**:
 - https://code.claude.com/docs/en/memory
 - https://code.claude.com/docs/en/memory#agents-md
@@ -1169,4 +1171,6 @@ Claude sẽ nhắc bạn chọn file bộ nhớ nào để cập nhật.
 - https://code.claude.com/docs/en/sub-agents#enable-persistent-memory
 - https://code.claude.com/docs/en/settings-reference
 - https://code.claude.com/docs/en/claude-directory
-**Các Mô Hình Tương Thích**: Claude Sonnet 4.6, Claude Opus 4.6, Claude Haiku 4.5
+- https://code.claude.com/docs/en/memory#how-claude-md-files-load
+- https://code.claude.com/docs/en/troubleshoot-install#fix-an-npm-12-install
+**Các Mô Hình Tương Thích**: Claude Fable 5.2, Claude Fable 5.1, Claude Fable 5, Claude Opus 5.5, Claude Opus 5, Claude Sonnet 5.5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 5.5, Claude Haiku 4.5

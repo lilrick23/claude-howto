@@ -461,6 +461,8 @@ Auto memory потребує **Claude Code v2.1.59 або новішої вер�
 npm install -g @anthropic-ai/claude-code@latest
 ```
 
+> **Примітка**: У npm 12, який за замовчуванням пропускає крок postinstall Claude Code, ця команда завершується помилкою `Error: claude native binary not installed.` Перейдіть на нативний інсталятор або скористайтеся інструкцією [Fix an npm 12 install](https://code.claude.com/docs/en/troubleshoot-install#fix-an-npm-12-install).
+
 ### Власний каталог Auto Memory
 
 За замовчуванням auto memory зберігається в `~/.claude/projects/<project>/memory/`. Ви можете змінити це розташування за допомогою налаштування `autoMemoryDirectory` (доступне з **v2.1.74**):
@@ -1123,7 +1125,7 @@ Claude запропонує обрати, який файл пам'яті оно
 
 **Завантаження пам'яті:**
 
-- Усі файли пам'яті автоматично завантажуються при запуску Claude Code
+- Файли CLAUDE.md у робочому каталозі та вище, правила без прив'язки до шляхів і початок `MEMORY.md` автоматично завантажуються при запуску Claude Code
 - Claude проходить вгору від поточного робочого каталогу для виявлення файлів CLAUDE.md
 - Файли піддерев виявляються та завантажуються контекстно при доступі до цих каталогів
 
@@ -1159,8 +1161,8 @@ Claude запропонує обрати, який файл пам'яті оно
 - [Офіційна документація пам'яті](https://code.claude.com/docs/en/memory) — документація Anthropic
 
 ---
-**Останнє оновлення**: 18 жовтня 2026
-**Версія Claude Code**: 2.1.302
+**Останнє оновлення**: 1 листопада 2026
+**Версія Claude Code**: 2.1.316
 **Джерела**:
 - https://code.claude.com/docs/en/memory
 - https://code.claude.com/docs/en/memory#agents-md
@@ -1169,4 +1171,6 @@ Claude запропонує обрати, який файл пам'яті оно
 - https://code.claude.com/docs/en/sub-agents#enable-persistent-memory
 - https://code.claude.com/docs/en/settings-reference
 - https://code.claude.com/docs/en/claude-directory
-**Сумісні моделі**: Claude Sonnet 4.6, Claude Opus 4.6, Claude Haiku 4.5
+- https://code.claude.com/docs/en/memory#how-claude-md-files-load
+- https://code.claude.com/docs/en/troubleshoot-install#fix-an-npm-12-install
+**Сумісні моделі**: Claude Fable 5.2, Claude Fable 5.1, Claude Fable 5, Claude Opus 5.5, Claude Opus 5, Claude Sonnet 5.5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 5.5, Claude Haiku 4.5

@@ -177,7 +177,7 @@ claude -p --system-prompt-file ./prompts/code-reviewer.txt "review main.py"
 | `--disallowedTools` | Інструменти, видалені з контексту | `"Bash(rm:*)" "Edit"` |
 | `--dangerously-skip-permissions` | Пропустити всі запити дозволів | `claude --dangerously-skip-permissions` |
 | `--permission-mode` | Починати у вказаному режимі дозволів | `claude --permission-mode auto` |
-| `--permission-prompt-tool` | MCP-інструмент для обробки дозволів | `claude -p --permission-prompt-tool mcp_auth "query"` |
+| `--permission-prompt-tool` | MCP-інструмент для обробки дозволів | `claude -p --mcp-config ./mcp.json --permission-prompt-tool mcp__permissions__approve "query"` |
 | `--enable-auto-mode` | Розблокувати auto permission mode | `claude --enable-auto-mode` |
 
 ### Приклади дозволів
@@ -447,7 +447,7 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           claude -p --output-format json \
-            --max-turns 1 \
+            --max-turns 5 \
             "Review the changes in this PR for:
             - Security vulnerabilities
             - Performance issues
@@ -669,7 +669,7 @@ Claude Code підтримує кілька моделей з різними м�
 |--------|-----|-----------------|----------|
 | Opus 4.6 | `claude-opus-4-6` | 1M токенів | Найпотужніша, адаптивні рівні зусиль |
 | Sonnet 4.6 | `claude-sonnet-4-6` | 1M токенів | Баланс швидкості та можливостей |
-| Haiku 4.5 | `claude-haiku-4-5` | 1M токенів | Найшвидша, оптимальна для швидких завдань |
+| Haiku 4.5 | `claude-haiku-4-5` | 200K токенів | Найшвидша, оптимальна для швидких завдань |
 
 ### Вибір моделі
 
@@ -698,10 +698,10 @@ claude --effort high "complex review"
 /effort high
 
 # Через змінну оточення
-export CLAUDE_CODE_EFFORT_LEVEL=high   # low, medium, high або max (лише Opus 4.6)
+export CLAUDE_CODE_EFFORT_LEVEL=high   # low, medium, high, xhigh або max (залежно від моделі)
 ```
 
-Ключове слово "ultrathink" у промптах активує глибоке міркування. Рівень `max` — ексклюзивний для Opus 4.6.
+Ключове слово "ultrathink" у промптах активує глибоке міркування. Починаючи з v2.1.311, якщо ввести його в інтерактивному терміналі, воно також запускає цей хід із рівнем `xhigh` на Opus 5.5, Sonnet 5.5, Haiku 5.5, Fable 5.2 (v2.1.321+) та Fable 5.1 через API Anthropic (слово підсвічується веселкою, коли це можливо; у VS Code — з v2.1.316), а `CLAUDE_CODE_DISABLE_ULTRATHINK=1` (v2.1.316) вимикає його.
 
 ---
 
@@ -716,11 +716,11 @@ export CLAUDE_CODE_EFFORT_LEVEL=high   # low, medium, high або max (лише 
 | `ANTHROPIC_DEFAULT_SONNET_MODEL` | Перевизначення стандартного ID моделі Sonnet |
 | `ANTHROPIC_DEFAULT_HAIKU_MODEL` | Перевизначення стандартного ID моделі Haiku |
 | `MAX_THINKING_TOKENS` | Бюджет токенів розширеного мислення |
-| `CLAUDE_CODE_EFFORT_LEVEL` | Рівень зусиль (`low`/`medium`/`high`/`max`) |
+| `CLAUDE_CODE_EFFORT_LEVEL` | Рівень зусиль (`low`/`medium`/`high`/`xhigh`/`max`) — за замовчуванням `medium` на Fable 5.2, Opus 5.5, Sonnet 5.5 та Haiku 5.5, `high` на Fable 5.1, Fable 5, Opus 5, Sonnet 5 та Opus 4.8 (`xhigh` на Opus 4.7); `xhigh` потребує моделі Fable, Opus 5.5, Sonnet 5.5, Haiku 5.5, Opus 5, Sonnet 5 або Opus 4.8/4.7; `max` працює на моделях Fable, Opus 5.5, Sonnet 5.5, Haiku 5.5, Opus 5, Sonnet 5, Opus 4.8/4.7/4.6 та Sonnet 4.6 |
 | `CLAUDE_CODE_SIMPLE` | Мінімальний режим, встановлюється прапорцем `--bare` |
 | `CLAUDE_CODE_DISABLE_AUTO_MEMORY` | Встановіть `1`, щоб вимкнути auto memory (файли auto memory не створюються і не завантажуються) |
 | `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS` | Вимкнути виконання фонових завдань |
-| `CLAUDE_CODE_DISABLE_CRON` | Вимкнути заплановані/cron-завдання |
+| `CLAUDE_CODE_DISABLE_CRON` | Вимкнути заплановані завдання в межах сесії (`/loop`, інструменти cron); хмарних запланованих завдань це не стосується |
 | `CLAUDE_CODE_DISABLE_GIT_INSTRUCTIONS` | Вимкнути git-інструкції |
 | `CLAUDE_CODE_DISABLE_TERMINAL_TITLE` | Вимкнути оновлення заголовка терміналу |
 | `CLAUDE_CODE_DISABLE_1M_CONTEXT` | Вимкнути контекстне вікно 1M токенів |
@@ -842,9 +842,12 @@ claude -p --output-format json "query"
 *Частина серії посібників [Claude How To](../)*
 
 ---
-**Останнє оновлення**: 18 жовтня 2026
-**Версія Claude Code**: 2.1.302
+**Останнє оновлення**: 12 листопада 2026
+**Версія Claude Code**: 2.1.322
 **Джерела**:
+- https://code.claude.com/docs/en/agent-sdk/agent-loop#turns-and-messages
+- https://code.claude.com/docs/en/model-config#use-ultrathink-for-one-off-deep-reasoning
+- https://code.claude.com/docs/en/changelog#2-1-316
 - https://code.claude.com/docs/en/cli-reference
 - https://code.claude.com/docs/en/headless
 - https://code.claude.com/docs/en/env-vars
@@ -853,4 +856,8 @@ claude -p --output-format json "query"
 - https://code.claude.com/docs/en/remote-control
 - https://code.claude.com/docs/en/setup
 - https://code.claude.com/docs/en/troubleshoot-install#command-not-found-claude-after-installation
-**Сумісні моделі**: Claude Fable 5, Claude Opus 5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 4.5
+- https://code.claude.com/docs/en/cli-reference#cli-flags
+- https://code.claude.com/docs/en/env-vars#variables
+- https://code.claude.com/docs/en/scheduled-tasks
+- https://code.claude.com/docs/en/model-config#adjust-effort-level
+**Сумісні моделі**: Claude Fable 5.2, Claude Fable 5.1, Claude Fable 5, Claude Opus 5.5, Claude Opus 5, Claude Sonnet 5.5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 5.5, Claude Haiku 4.5

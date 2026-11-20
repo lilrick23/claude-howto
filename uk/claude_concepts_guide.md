@@ -2291,8 +2291,8 @@ claude --plugin-dir ./07-plugins/pr-review
 # Result:
 # ✅ 3 slash commands installed
 # ✅ 3 subagents configured
-# ✅ 2 MCP servers connected
-# ✅ 4 hooks registered
+# ✅ 1 MCP server connected
+# ✅ 1 hook registered
 # ✅ Ready to use!
 ```
 
@@ -2311,14 +2311,10 @@ devops-automation/
 │   ├── deployment-specialist.md
 │   ├── incident-commander.md
 │   └── alert-analyzer.md
-├── mcp/
-│   ├── github-config.json
-│   ├── kubernetes-config.json
-│   └── prometheus-config.json
 ├── hooks/
+│   ├── hooks.json
 │   ├── pre-deploy.js
-│   ├── post-deploy.js
-│   └── on-error.js
+│   └── post-deploy.js
 └── scripts/
     ├── deploy.sh
     ├── rollback.sh
@@ -2340,9 +2336,7 @@ documentation/
 │   ├── api-documenter.md
 │   ├── code-commentator.md
 │   └── example-generator.md
-├── mcp/
-│   ├── github-docs-config.json
-│   └── slack-announce-config.json
+├── .mcp.json
 └── templates/
     ├── api-endpoint.md
     ├── function-docs.md
@@ -2458,8 +2452,8 @@ Complete PR review workflow with security, testing, and documentation checks.
 ## What's Included
 - 3 slash commands for different review types
 - 3 specialized subagents
-- GitHub and CodeQL MCP integration
-- Automated security scanning hooks
+- GitHub MCP integration
+- A pre-review hook that checks the git repository
 
 ## Installation
 ```bash
@@ -2475,15 +2469,15 @@ claude --plugin-dir ./07-plugins/pr-review
 
 ## Usage
 ```bash
-/review-pr
-/check-security
-/check-tests
+/pr-review:review-pr
+/pr-review:check-security
+/pr-review:check-tests
 ```
 
 ## Requirements
 - Claude Code 2.1+
-- GitHub access
-- CodeQL (optional)
+- Node.js and Docker
+- A GitHub personal access token in `GITHUB_TOKEN`
 ~~~~
 
 ### Плагін проти ручної конфігурації
@@ -2974,7 +2968,7 @@ claude --permission-mode dontAsk       # Pre-approved tools only; deny the rest
 **Використання:**
 ```bash
 # Run specific task
-claude -p "Run all tests"
+claude -p "Run all tests" --permission-mode auto
 
 # Pipe input for analysis
 cat error.log | claude -p "explain this error"
@@ -3057,12 +3051,12 @@ claude -r "Feature"    # Resume session by name/ID
 ---
 
 *Останнє оновлення: 15 серпня 2026*
-*Для Claude Fable 5, Claude Opus 5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 4.5*
+*Для Claude Fable 5.2, Claude Fable 5.1, Claude Fable 5, Claude Opus 5.5, Claude Opus 5, Claude Sonnet 5.5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 5.5, Claude Haiku 4.5*
 *Тепер включає: хуки, контрольні точки, режим планування, розширене мислення, фонові завдання, режими дозволів (6 режимів), headless-режим, управління сесіями, авто-пам'ять, команди агентів, заплановані завдання, інтеграцію з Chrome, канали, голосовий ввід та комплектні навички*
 
 ---
-**Останнє оновлення**: 18 жовтня 2026
-**Версія Claude Code**: 2.1.302
+**Останнє оновлення**: 26 жовтня 2026
+**Версія Claude Code**: 2.1.310
 **Джерела**:
 - https://code.claude.com/docs/en/plugins/manifest-reference
 - https://code.claude.com/docs/en/plugins/create
@@ -3078,3 +3072,5 @@ claude -r "Feature"    # Resume session by name/ID
 - https://code.claude.com/docs/en/commands
 - https://code.claude.com/docs/en/permission-modes
 - https://code.claude.com/docs/en/hooks#userpromptexpansion
+- https://code.claude.com/docs/en/headless#auto-approve-tools
+- https://code.claude.com/docs/en/permission-modes#which-mode-a-non-interactive-run-starts-in

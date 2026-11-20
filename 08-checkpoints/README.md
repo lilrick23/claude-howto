@@ -45,7 +45,7 @@ Use the `/rewind` command (aliases: `/checkpoint`, `/undo`) for quick access:
 
 ## Rewind Options
 
-When you rewind, you are presented with a menu of six options:
+When you rewind, you are presented with a menu of up to six options:
 
 1. **Restore code and conversation** -- Revert both files and messages to that checkpoint
 2. **Restore conversation** -- Rewind messages only, keep your current code as-is
@@ -54,7 +54,11 @@ When you rewind, you are presented with a menu of six options:
 5. **Summarize up to here** -- The backward counterpart: compress everything *before* the selected point into an AI-generated summary, keeping the messages from this point forward intact. Together with "Summarize from here" this gives you bidirectional, targeted compaction of your context window. No files on disk are changed, and the original messages are preserved in the session transcript.
 6. **Never mind** -- Cancel and return to the current state
 
+The two code restore options appear only when the selected checkpoint has file changes to revert, and the two Summarize options are hidden when `DISABLE_COMPACT` is set (v2.1.311+).
+
 > **Note**: After restoring the conversation or choosing **Summarize from here**, the original prompt from the selected message is restored into the input field so you can re-send or edit it. Choosing **Summarize up to here** leaves you at the end of the conversation with the input empty.
+
+> **Tip**: Send Claude a prompt before you exit after a rewind. Claude Code saves the rewound conversation together with that prompt, so if you exit first, the rewound messages can come back. To remove them again, run `/rewind`, select the same prompt, and choose **Restore conversation**. Restored files stay as the rewind left them.
 
 > **`/clear` is no longer a hard boundary (v2.1.191+)**: `/rewind` can resume from a checkpoint taken *before* you ran `/clear`. Clearing the conversation no longer permanently discards the state that preceded it — you can rewind back across the clear if you need that earlier code or context again.
 
@@ -243,12 +247,12 @@ Claude Code keeps snapshots for the **100 most recent checkpoints**; older ones 
 
 Checkpoints have the following limitations:
 
-- **Bash command changes NOT tracked** - Operations like `rm`, `mv`, `cp` on the filesystem are not captured in checkpoints
-- **External changes NOT tracked** - Changes made outside Claude Code (in your editor, terminal, etc.) are not captured
+- **Bash-only file changes NOT tracked** - Once Claude has edited a file with its file editing tools, `/rewind` also undoes changes that Bash commands make to that file afterward; a file that only Bash commands changed isn't tracked. Since v2.1.309, `sed -i` is treated like any other Bash edit
+- **External changes NOT tracked** - Changes made outside Claude Code (in your editor, terminal, another session, etc.) are normally not captured, unless they touch files Claude edited in this session — then a code restore can overwrite them (the /rewind warning says so since v2.1.311)
 - **Not a replacement for version control** - Use git for permanent, auditable changes to your codebase
-- **Subagent edits NOT restored** - Files edited by a subagent are untracked, so `/rewind` leaves them as they are; the exception is a foreground `context: fork` skill, whose edits are restored like the main session's
+- **Subagent edits NOT restored** - A subagent's edits to files Claude hadn't already edited in your conversation are untracked, so `/rewind` leaves them as they are (revert them with git); the exception is a foreground `context: fork` skill, whose edits are restored like the main session's
 
-> **v2.1.216 update**: `/rewind` no longer restores or deletes files through symlinks or hard links at tracked paths. If a tracked path resolves through a symlink or hard link, rewind skips it rather than following the link, and it reports how many paths it skipped for this reason.
+> **v2.1.216 update**: `/rewind` no longer restores or deletes files through symlinks or hard links at tracked paths. If a tracked path resolves through a symlink or hard link, rewind skips it rather than following the link (directory symlinks are no longer followed since v2.1.319), and it reports how many paths it skipped for this reason.
 
 ## Troubleshooting
 
@@ -269,6 +273,7 @@ Checkpoints have the following limitations:
 - Ensure no uncommitted changes conflict
 - Check if checkpoint is corrupted
 - Try rewinding to a different checkpoint
+- `No files were restored` when restoring code to a checkpoint from before `/branch`: fixed in v2.1.319, so update Claude Code
 
 ## Integration with Git
 
@@ -337,8 +342,8 @@ Remember: checkpoints are not a replacement for git. Use checkpoints for rapid e
 
 ---
 
-**Last Updated**: October 18, 2026
-**Claude Code Version**: 2.1.302
+**Last Updated**: November 12, 2026
+**Claude Code Version**: 2.1.322
 **Sources**:
 - https://code.claude.com/docs/en/checkpointing
 - https://code.claude.com/docs/en/settings
@@ -346,4 +351,13 @@ Remember: checkpoints are not a replacement for git. Use checkpoints for rapid e
 - https://code.claude.com/docs/en/model-config
 - https://code.claude.com/docs/en/commands
 - https://code.claude.com/docs/en/claude-directory
-**Compatible Models**: Claude Fable 5, Claude Opus 5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 4.5
+- https://code.claude.com/docs/en/changelog#2-1-309
+- https://code.claude.com/docs/en/checkpointing#bash-command-changes-not-tracked
+- https://code.claude.com/docs/en/checkpointing#subagent-edits-not-restored
+- https://code.claude.com/docs/en/checkpointing#rewound-messages-can-return-if-you-exit-before-your-next-prompt
+- https://code.claude.com/docs/en/checkpointing#external-changes-not-tracked
+- https://code.claude.com/docs/en/changelog#2-1-311
+- https://code.claude.com/docs/en/checkpointing#rewind-and-summarize
+- https://code.claude.com/docs/en/errors#no-files-were-restored
+- https://code.claude.com/docs/en/changelog#2-1-319
+**Compatible Models**: Claude Fable 5.2, Claude Fable 5.1, Claude Fable 5, Claude Opus 5.5, Claude Opus 5, Claude Sonnet 5.5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 5.5, Claude Haiku 4.5

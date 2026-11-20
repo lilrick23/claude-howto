@@ -67,10 +67,10 @@ chmod +x ~/.claude/hooks/*.sh
 
 ### Plugins
 ```bash
-# Install from examples (if published)
-claude --plugin-dir ./07-plugins/pr-review
-/plugin install devops-automation
-/plugin install documentation
+# Load the examples for one session (from the repo root)
+claude --plugin-dir ./07-plugins/pr-review \
+  --plugin-dir ./07-plugins/devops-automation \
+  --plugin-dir ./07-plugins/documentation
 ```
 
 ### Checkpoints
@@ -97,7 +97,7 @@ claude --plugin-dir ./07-plugins/pr-review
 # plan           - Read-only analysis, no modifications
 # auto           - Background classifier decides permissions automatically
 # dontAsk        - Only pre-approved tools run; everything else is denied
-# bypassPermissions - Accept all actions (--permission-mode bypassPermissions; --dangerously-skip-permissions is equivalent)
+# bypassPermissions - Accept all actions except deny rules and the few no mode auto-approves (--permission-mode bypassPermissions; --dangerously-skip-permissions is equivalent)
 
 # Session management
 /resume                # Resume a previous conversation (no args = picker of past sessions)
@@ -132,7 +132,7 @@ claude -r "session"    # Resume session by name/ID
 | **Git Worktrees** | Built-in | `claude -w <name>` |
 | **Auto Memory** | Built-in | Auto-saves to `~/.claude/projects/<project>/memory/` |
 | **Task List** | Built-in | `Ctrl+T` (checklist), `/tasks` (background work) |
-| **Bundled Skills** | Built-in | `/batch`, `/claude-api`, `/code-review [low\|medium\|high\|xhigh\|max\|ultra] [--fix] [--comment] [pr#\|branch\|path]` *(Claude can also start it on its own, everywhere since v2.1.246; with no level given it reuses the last one you typed, v2.1.223)*, `/simplify` *(cleanup-only review; distinct from `/code-review` again since v2.1.154)*, `/debug`, `/fewer-permission-prompts`, `/loop`, `/run` *(v2.1.145+)*, `/run-skill-generator` *(v2.1.145+)*, `/verify` *(v2.1.145+; explicit invocation only since v2.1.215 — Claude won't trigger this on its own)* |
+| **Bundled Skills** | Built-in | `/batch`, `/claude-api`, `/code-review [low\|medium\|high\|xhigh\|max\|ultra] [--fix] [--comment] [pr#\|branch\|path]` *(Claude can also start it on its own, everywhere since v2.1.246; with no level given it reuses the last one you typed, v2.1.223)*, `/simplify` *(cleanup-only review; distinct from `/code-review` again since v2.1.154)*, `/debug`, `/fewer-permission-prompts`, `/loop`, `/run`, `/run-skill-generator`, `/verify` *(explicit invocation only since v2.1.215 — Claude won't trigger this on its own)* |
 
 ---
 
@@ -154,7 +154,7 @@ cp -r 03-skills/code-review-specialist ~/.claude/skills/
 
 # Method 4: Plugin (best)
 claude --plugin-dir ./07-plugins/pr-review
-# Use: /review-pr
+# Use: /pr-review:review-pr
 ```
 
 ### Documentation
@@ -169,15 +169,15 @@ cp 04-subagents/documentation-writer.md .claude/agents/
 cp -r 03-skills/doc-generator ~/.claude/skills/
 
 # Plugin (complete solution)
-/plugin install documentation
+claude --plugin-dir ./07-plugins/documentation
 ```
 
 ### DevOps
 ```bash
 # Complete plugin
-/plugin install devops-automation
+claude --plugin-dir ./07-plugins/devops-automation
 
-# Commands: /deploy, /rollback, /status, /incident
+# Commands: /devops-automation:deploy, /devops-automation:rollback, /devops-automation:status, /devops-automation:incident
 ```
 
 ### Team Standards
@@ -226,7 +226,9 @@ claude --permission-mode auto -p "Refactor and test the auth module"
 
 ### CI/CD Integration
 ```bash
-# Run in headless mode (non-interactive)
+# Run in headless mode (non-interactive). With no permission mode, -p starts in Manual mode
+# (config value "default", v2.1.302+): tool calls that need approval are denied, so add
+# --allowedTools "Bash(npm test *)" or --permission-mode auto
 claude -p "Run all tests and generate report"
 
 # With permission mode for CI
@@ -380,9 +382,9 @@ cp -r 03-skills/code-review-specialist ~/.claude/skills/
 claude --plugin-dir ./07-plugins/pr-review
 
 # Use bundled features
-/review-pr
-/check-security
-/check-tests
+/pr-review:review-pr
+/pr-review:check-security
+/pr-review:check-tests
 ```
 
 ---
@@ -406,19 +408,19 @@ claude --plugin-dir ./07-plugins/pr-review
 | **Auto Memory** | Automatic memory saving from conversations | Claude saves notes to `~/.claude/projects/<project>/memory/MEMORY.md`; manage with `/memory` |
 | **AGENTS.md** *(v2.1.277)* | Cross-tool project-context file, read as project instructions when no `CLAUDE.md` exists at or above the working directory | Switch modes with **Project instructions** in `/config`. See [AGENTS.md](02-memory/README.md#agentsmd) |
 | **Git Worktrees** | Isolated workspaces for parallel development | `claude --worktree <name>` (or `-w`) |
-| **Model Selection** | Switch between Fable 5.1, Fable 5, Opus 5.5, Opus 5, Sonnet 5.5, Sonnet 5, Sonnet 4.6, Opus 4.8, Haiku 5.5, and Haiku 4.5 | `/model` (`sonnet` resolves to Sonnet 5.5 on the Anthropic API, v2.1.284+) — since v2.1.153 the choice is saved as the default for new sessions; press `s` for session-only |
+| **Model Selection** | Switch between Fable 5.2, Fable 5.1, Fable 5, Opus 5.5, Opus 5, Sonnet 5.5, Sonnet 5, Sonnet 4.6, Opus 4.8, Haiku 5.5, and Haiku 4.5 | `/model` (`sonnet` resolves to Sonnet 5.5 on the Anthropic API, v2.1.284+) — since v2.1.153 the choice is saved as the default for new sessions; press `s` for session-only |
 | **Agent Teams** | Coordinate multiple agents on tasks | Enable with `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` env var (experimental) |
 | **Dynamic Workflows** *(v2.1.154)* | Deterministic multi-agent orchestration; since v2.1.219 the default size guideline is medium (aim for fewer than 10 agents) | `/workflows` to view runs; ask Claude to create one; change the size via **Dynamic workflow size** in `/config` |
-| **Scheduled Tasks** | Recurring tasks with `/loop` | `/loop 5m /command` or CronCreate tool |
+| **Scheduled Tasks (session-scoped)** | Recurring tasks with `/loop` within a session | `/loop 5m /command` or CronCreate tool |
 | **Chrome Integration** | Browser automation | `--chrome` flag or `/chrome` command |
 | **Keyboard Customization** | Custom keybindings | `/keybindings` command |
 | **/usage-credits** | Configure extra usage limits (renamed from `/extra-usage` in v2.1.144; old name still works as alias) | `/usage-credits` |
-| **/run** *(v2.1.145+)* | Launch this project's app to see a change running | `/run` |
-| **/verify** *(v2.1.145+)* | Build, run, and observe the app to confirm a fix works (explicit invocation only since v2.1.215 — Claude won't trigger this on its own) | `/verify` |
-| **/run-skill-generator** *(v2.1.145+)* | Teach `/run`/`/verify` how to handle a specific project | `/run-skill-generator` |
+| **/run** | Launch this project's app to see a change running | `/run` |
+| **/verify** | Build, run, and observe the app to confirm a fix works (explicit invocation only since v2.1.215 — Claude won't trigger this on its own) | `/verify` |
+| **/run-skill-generator** | Teach `/run`/`/verify` how to handle a specific project | `/run-skill-generator` |
 | **Subagent Output Scanning** *(v2.1.210+)* | Scans subagent reports for prompt-injection patterns and neutralizes them | On by default, no opt-out |
-| **WebSearch Cap and Subagent Fan-Out Limits** *(v2.1.212, extended v2.1.219)* | 200 WebSearch calls per session, refilling at 100 calls/hour in interactive sessions since v2.1.290; concurrent-subagent cap (default 20) added in v2.1.217; since v2.1.219 subagents can spawn nested subagents up to **depth 3 by default** (v2.1.217 had disabled nesting). The 200-subagent-per-session spawn cap was **removed in v2.1.224** — there is no longer any limit on total subagents per session | `CLAUDE_CODE_MAX_WEB_SEARCHES_PER_SESSION` (default 200; `/clear` resets), `CLAUDE_CODE_WEB_SEARCH_REFILLS_PER_HOUR` (default 100 interactive, 0 with `-p`), `CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS` (default 20), `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` (default 3; set 1 to disable) |
-| **Screen Reader Mode** *(v2.1.208)* | Plain-text rendering mode for screen readers | `--ax-screen-reader` flag, `CLAUDE_AX_SCREEN_READER=1`, or `"axScreenReader": true` in settings |
+| **WebSearch Cap and Subagent Fan-Out Limits** *(v2.1.212, extended v2.1.219)* | 200 WebSearch calls per session (per turn in `-p` and the Agent SDK), refilling at 100 calls/hour in interactive sessions since v2.1.290; concurrent-subagent cap (default 20) added in v2.1.217; since v2.1.219 subagents can spawn nested subagents up to **depth 3 by default** (v2.1.217 had disabled nesting). The 200-subagent-per-session spawn cap was **removed in v2.1.224** — there is no longer any limit on total subagents per session | `CLAUDE_CODE_MAX_WEB_SEARCHES_PER_SESSION` (default 200; `/clear` resets), `CLAUDE_CODE_WEB_SEARCH_REFILLS_PER_HOUR` (default 100 interactive, 0 with `-p`), `CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS` (default 20), `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` (default 3; set 1 to disable) |
+| **Screen Reader Mode** *(v2.1.208)* | Plain-text rendering mode for screen readers | `--ax-screen-reader` flag, `CLAUDE_AX_SCREEN_READER=1` in your shell, or `"axScreenReader": true` in user settings (`~/.claude/settings.json`), managed settings, or a `--settings` file — ignored in project and local settings since v2.1.305 |
 | **Restricted Mode** *(v2.1.248+)* | Drops the built-in tools that run commands or code (such as Bash and PowerShell) and WebFetch unless `--tools` names them individually (not via the `default` preset); ignores user, project, and local settings (managed settings and `--settings` still apply); confines file tools to the working directories; refuses `bypassPermissions` and cloud sessions | `claude --restricted`, or `CLAUDE_CODE_RESTRICTED=1` |
 | **Subagent Cache TTL** *(v2.1.248+)* | `experimental.cacheTtl` agent-frontmatter field sets how long the subagent's prompt cache lives | Add `experimental:` with `cacheTtl: "5m"` (or `"1h"`) to the agent's frontmatter. See [Subagents](04-subagents/README.md) |
 | **Forced Subagent Model** *(v2.1.257+)* | `CLAUDE_CODE_SUBAGENT_MODEL_FORCE=1` makes `CLAUDE_CODE_SUBAGENT_MODEL` override agent frontmatter. Since v2.1.251 the env var no longer wins by default — frontmatter (including `model: inherit`) takes precedence unless this is set | `CLAUDE_CODE_SUBAGENT_MODEL=sonnet CLAUDE_CODE_SUBAGENT_MODEL_FORCE=1 claude` |
@@ -524,8 +526,8 @@ Getting started checklist:
 
 ---
 
-**Last Updated**: October 18, 2026
-**Claude Code Version**: 2.1.302
+**Last Updated**: November 12, 2026
+**Claude Code Version**: 2.1.322
 **Sources**:
 - https://code.claude.com/docs/en/workflows#set-a-size-guideline
 - https://code.claude.com/docs/en/memory#agents-md
@@ -545,4 +547,11 @@ Getting started checklist:
 - https://code.claude.com/docs/en/managed-settings
 - https://code.claude.com/docs/en/scheduled-tasks
 - https://code.claude.com/docs/en/code-review-local
-**Compatible Models**: Claude Fable 5.1, Claude Fable 5, Claude Opus 5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 4.5
+- https://code.claude.com/docs/en/changelog#2-1-307
+- https://code.claude.com/docs/en/settings-reference#axscreenreader
+- https://code.claude.com/docs/en/headless
+- https://code.claude.com/docs/en/permission-modes#tool-calls-denied-in-claude-p-and-agent-sdk-runs
+- https://code.claude.com/docs/en/tools-reference#session-search-limit
+- https://code.claude.com/docs/en/routines
+- https://code.claude.com/docs/en/model-config#work-with-fable
+**Compatible Models**: Claude Fable 5.2, Claude Fable 5.1, Claude Fable 5, Claude Opus 5.5, Claude Opus 5, Claude Sonnet 5.5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 5.5, Claude Haiku 4.5

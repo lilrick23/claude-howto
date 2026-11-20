@@ -68,7 +68,7 @@
 | `shell` | `"bash"` または `"powershell"` を受け付ける。デフォルトは `"bash"`、Git Bash が未インストールの Windows では `"powershell"`。 | `"bash"` |
 | `statusMessage` | フック実行中に表示されるカスタムスピナーメッセージ | `"フォーマット中…"` |
 
-> **注意**: 一部のイベントはデフォルトのタイムアウトを引き下げる。`UserPromptSubmit` は command / http / mcp_tool のデフォルトを 30 秒に、`MessageDisplay` は 10 秒に下げる。`SessionEnd` フックは 1.5 秒の予算を共有し、設定でより長い `timeout` を指定した場合は Claude Code が最大 60 秒まで予算を引き上げる。
+> **注意**: 一部のイベントはデフォルトのタイムアウトを引き下げる。`UserPromptSubmit` は command / http / mcp_tool のデフォルトを 30 秒に、`MessageDisplay` は 10 秒に下げる。`SessionEnd` フックは 1.5 秒の予算を共有し、設定でより長い `timeout` を指定した場合は Claude Code が最大 60 秒まで予算を引き上げる。`claude -p` と Agent SDK のセッションでは、フックの実行が長引く間、Claude Code が 30 秒ごとに進捗ハートビートを送る（v2.1.323）。そのため Claude Desktop などのホストは、このバージョンを取り込めばターンをハングとみなして終了しなくなる。
 
 ### マッチャーパターン
 
@@ -265,7 +265,7 @@ Claude がツールパラメータを生成した後、処理開始前に動作�
   - `"allow"` は権限プロンプトをスキップする（ユーザー操作が必須のツール、および組織が `ask` に設定したコネクタツールを除く）
   - `"deny"` はツール呼び出しを阻止する
   - `"ask"` はユーザーに確認を求める
-  - `"defer"` は正常終了して後でツールを再開できるようにする。この値では `permissionDecisionReason`、`updatedInput`、`additionalContext` はいずれも無視される
+  - `"defer"` はターンを終了して後でツールを再開できるようにする。`-p` を使った非対話モードでのみ機能する（対話セッションでは警告をログに記録して無視する）。結果には `stop_reason: "tool_deferred"` が含まれる。この値では `permissionDecisionReason`、`updatedInput`、`additionalContext` はいずれも無視される
   - フックが何を返しても deny／ask のルールは引き続き評価される。複数の `PreToolUse` フックの判定が食い違う場合、優先順位は `deny` > `defer` > `ask` > `allow` となる
 - `permissionDecisionReason`: 判定の理由。`"ask"` では（Claude ではなく）ユーザーに表示され、`"deny"` では Claude に表示される。`"allow"` と `"defer"` ではデバッグログにのみ記録される
 - `updatedInput`: 置き換え用のツール入力（入力オブジェクト全体を置き換える）。v2.1.300 以降は Claude 自身の入力と同様に検証され、未知のキーは破棄され、ツールが拒否する入力では呼び出しが拒否される。
@@ -968,7 +968,7 @@ if __name__ == "__main__":
 
 ### 例 7：自動モード権限のシード（一度限りのセットアップスクリプト）
 
-`~/.claude/settings.json` に Claude Code の自動モードベースラインに相当する安全な権限ルール（デフォルトで 37 個、すべてのカテゴリフラグを有効にすると最大 63 個）をシードする一度限りのセットアップスクリプト。フックなし、将来の選択を覚えることもなし。1 回実行すれば良く、再実行しても安全（既存ルールはスキップ）。
+`~/.claude/settings.json` に Claude Code の自動モードベースラインに相当する安全な権限ルール（デフォルトで 32 個、すべてのカテゴリフラグを有効にすると最大 58 個）をシードする一度限りのセットアップスクリプト。フックなし、将来の選択を覚えることもなし。1 回実行すれば良く、再実行しても安全（既存ルールはスキップ）。
 
 **ファイル：** `09-advanced-features/setup-auto-mode-permissions.py`
 
@@ -990,7 +990,7 @@ python3 09-advanced-features/setup-auto-mode-permissions.py
 | Git 書き込み（ローカル） | `Bash(git add:*)`、`Bash(git commit:*)`、`Bash(git checkout:*)` |
 | パッケージマネージャ | `Bash(npm ci:*)`、`Bash(npm install:*)`、`Bash(pip install:*)`、`Bash(pip3 install:*)` |
 | ビルド・テスト | `Bash(make:*)`、`Bash(pytest:*)`、`Bash(go test:*)` |
-| 一般的なシェル | `Bash(ls:*)`、`Bash(cat:*)`、`Bash(find:*)` |
+| 一般的なシェル | `Bash(ls:*)`、`Bash(cat:*)`、`Bash(wc:*)` |
 | GitHub CLI | `Bash(gh pr view:*)`、`Bash(gh pr create:*)`、`Bash(gh issue list:*)` |
 
 **意図的に除外される項目**（このスクリプトでは追加されない）：
@@ -1334,7 +1334,7 @@ echo $?
 | 項目 | 動作 |
 |------|------|
 | **タイムアウト** | command/http/mcp_tool はデフォルト 600 秒（prompt は 30 秒、agent は 60 秒）、フックごとに設定可能 |
-| **並列化** | マッチしたフックはすべて並列実行。v2.1.302 以降、1 つのイベントで同時に実行される prompt／agent フックは最大 12 個で、残りは順番を待つ |
+| **並列化** | マッチしたフックはすべて並列実行。v2.1.312 以降、同時に実行される prompt／agent フックはセッションあたり最大 24 個（サブエージェントを含む）に加え、イベントのタイムアウトより長く待機したものが最大 12 個で、残りは順番を待つ（v2.1.302〜v2.1.311 では 1 つのイベントにつき最大 12 個） |
 | **重複排除** | 同一のフックコマンドは重複排除される |
 | **環境** | カレントディレクトリで Claude Code の環境のもと実行 |
 
@@ -1390,8 +1390,8 @@ chmod +x ~/.claude/hooks/*.sh
 
 ---
 
-**最終更新：** 2026 年 10 月 18 日
-**Claude Code バージョン：** 2.1.302
+**最終更新：** 2026 年 11 月 1 日
+**Claude Code バージョン：** 2.1.316
 **情報源：**
 - https://code.claude.com/docs/en/hooks
 - https://code.claude.com/docs/en/plugins/manifest-reference#quoting-and-path-separators
@@ -1406,4 +1406,6 @@ chmod +x ~/.claude/hooks/*.sh
 - https://code.claude.com/docs/en/hooks#userpromptsubmit-input
 - https://code.claude.com/docs/en/changelog#2-1-299
 - https://code.claude.com/docs/en/changelog#2-1-300
-**対応モデル：** Claude Fable 5、Claude Opus 5、Claude Sonnet 5、Claude Sonnet 4.6、Claude Opus 4.8、Claude Haiku 4.5
+- https://code.claude.com/docs/en/hooks#defer-a-tool-call-for-later
+- https://code.claude.com/docs/en/changelog#2-1-312
+**対応モデル：** Claude Fable 5.2、Claude Fable 5.1、Claude Fable 5、Claude Opus 5.5、Claude Opus 5、Claude Sonnet 5.5、Claude Sonnet 5、Claude Sonnet 4.6、Claude Opus 4.8、Claude Haiku 5.5、Claude Haiku 4.5

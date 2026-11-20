@@ -81,7 +81,7 @@ Commands là các lệnh tắt do người dùng gọi thực hiện các hành 
 | `/subtask` | Spawn một subagent được fork kế thừa cuộc hội thoại và báo cáo lại (v2.1.212+) | Giao một tác vụ phụ mà không mất chỗ đang làm |
 | `/stats` | Hiển thị thống kê session | Review metrics session |
 | `/statusline` | Cấu hình status line | Tùy chỉnh hiển thị trạng thái |
-| `/stickers` | Đặt mua stickers Claude Code | Phần thưởng vui |
+| `/stickers` | Kiểm tra xem stickers Claude Code có sẵn không | Phần thưởng vui |
 | `/fast` | Bật/tắt mode output nhanh | Tăng tốc độ responses |
 | `/terminal-setup` | Cấu hình tích hợp terminal | Thiết lập tính năng terminal |
 | `/upgrade` | Mở trang nâng cấp để chuyển sang gói cao hơn | Nâng cấp gói |
@@ -246,8 +246,8 @@ Bộ sưu tập được đóng gói của commands, agents, MCP servers, và ho
 | Plugin | Mô Tả | Components | Khi Nào Dùng | Phạm Vi | Cài Đặt |
 |--------|-------------|------------|-------------|-------|--------------|
 | `pr-review` | Workflow review PR | 3 commands, 3 agents, GitHub MCP | Review code | Project | `claude --plugin-dir ./07-plugins/pr-review` |
-| `devops-automation` | Triển khai & giám sát | 4 commands, 3 agents, K8s MCP | Tasks DevOps | Project | `/plugin install devops-automation` |
-| `documentation` | Bộ tạo tài liệu | 4 commands, 3 agents, templates | Tài liệu | Project | `/plugin install documentation` |
+| `devops-automation` | Triển khai & giám sát | 4 commands, 3 agents, 2 hooks | Tasks DevOps | Project | `claude --plugin-dir ./07-plugins/devops-automation` |
+| `documentation` | Bộ tạo tài liệu | 4 commands, 3 agents, GitHub MCP, templates | Tài liệu | Project | `claude --plugin-dir ./07-plugins/documentation` |
 
 > **Phạm Vi**: `Project` = chia sẻ team, `User` = workflows cá nhân
 
@@ -427,7 +427,7 @@ Ngữ cảnh lưu trữ được tải tự động qua sessions.
 | **Project Rules** | `.claude/rules/` | Project (team) | Rules dự án modular |
 | **User** | `~/.claude/CLAUDE.md` | User (cá nhân) | Sở thích cá nhân |
 | **User Rules** | `~/.claude/rules/` | User (cá nhân) | Rules cá nhân modular |
-| **Local** | `./CLAUDE.local.md` | Local (git-ignored) | Ghi đè cụ thể theo máy (không trong tài liệu chính thức tính đến tháng 3/2026; có thể là legacy) |
+| **Local** | `./CLAUDE.local.md` | Local (git-ignored) | Tùy thích cá nhân theo dự án, tải cùng với `CLAUDE.md`; được hỗ trợ chính thức ([tài liệu chính thức](https://code.claude.com/docs/en/memory)), thêm vào `.gitignore` |
 | **Auto Memory** | Tự động | Session | Insights và chỉnh sửa được tự động nắm bắt |
 
 > **Phạm Vi**: `Organization` = được quản lý bởi admins, `Project` = chia sẻ với team qua git, `User` = sở thích cá nhân, `Local` = không được commit, `Session` = được tự động quản lý

@@ -3,125 +3,142 @@
   <img alt="Claude How To" src="../../../resources/logos/claude-howto-logo.svg">
 </picture>
 
-# Documentation Plugin
+# Plugin Documentation
 
-Comprehensive documentation generation and maintenance for your project.
+Tạo và duy trì tài liệu toàn diện cho dự án của bạn.
 
-## Features
+## Tính Năng
 
-✅ API documentation generation
-✅ README creation and updates
-✅ Documentation synchronization
-✅ Code comment improvements
-✅ Example generation
+✅ Tạo tài liệu API
+✅ Tạo mới và cập nhật README
+✅ Đồng bộ tài liệu
+✅ Cải thiện comment trong code
+✅ Tạo ví dụ
 
-## Installation
+## Cài Đặt
 
 ```bash
 claude --plugin-dir ./07-plugins/documentation
 ```
 
-## What's Included
+Kiểm tra plugin trước khi tải:
 
-### Slash Commands
-- `/generate-api-docs` - Generate API documentation
-- `/generate-readme` - Create or update README
-- `/sync-docs` - Sync docs with code changes
-- `/validate-docs` - Validate documentation
-
-### Subagents
-- `api-documenter` - API documentation specialist
-- `code-commentator` - Code comment improvements
-- `example-generator` - Code example creation
-
-### Templates
-- `api-endpoint.md` - API endpoint documentation template
-- `function-docs.md` - Function documentation template
-- `adr-template.md` - Architecture Decision Record template
-
-### MCP Servers
-- GitHub integration for documentation syncing
-
-## Usage
-
-### Generate API Documentation
-```
-/generate-api-docs
+```bash
+claude plugin validate ./07-plugins/documentation
 ```
 
-### Create README
-```
-/generate-readme
+## Những Gì Được Bao Gồm
+
+### Lệnh Slash
+
+Lệnh của plugin được đặt namespace theo `name` của plugin trong `plugin.json`:
+
+- `/documentation:generate-api-docs` - Tạo tài liệu API
+- `/documentation:generate-readme` - Tạo mới hoặc cập nhật README
+- `/documentation:sync-docs` - Đồng bộ tài liệu với các thay đổi code
+- `/documentation:validate-docs` - Kiểm tra tài liệu
+
+### Tác Nhân Con
+- `api-documenter` - Chuyên gia tài liệu API
+- `code-commentator` - Cải thiện comment trong code
+- `example-generator` - Tạo ví dụ code
+
+### Template
+- `api-endpoint.md` - Template tài liệu cho API endpoint
+- `function-docs.md` - Template tài liệu cho hàm
+- `adr-template.md` - Template Architecture Decision Record (ADR)
+
+### MCP Server
+
+`.mcp.json` khai báo một server, `github`: MCP server chính thức của GitHub (`ghcr.io/github/github-mcp-server`), chạy bằng Docker ở chế độ chỉ đọc. Image được ghim ở [bản phát hành v2.1.0](https://github.com/github/github-mcp-server/releases/tag/v2.1.0); đổi tag trong `.mcp.json` để nâng cấp. Server này hiển thị là `plugin:documentation:github` trong `/mcp`.
+
+## Cách Sử Dụng
+
+### Tạo Tài Liệu API
+```text
+/documentation:generate-api-docs
 ```
 
-### Sync Documentation
-```
-/sync-docs
-```
-
-### Validate Documentation
-```
-/validate-docs
+### Tạo README
+```text
+/documentation:generate-readme
 ```
 
-## Requirements
+### Đồng Bộ Tài Liệu
+```text
+/documentation:sync-docs
+```
+
+### Kiểm Tra Tài Liệu
+```text
+/documentation:validate-docs
+```
+
+## Yêu Cầu
 
 - Claude Code 2.1+
-- GitHub access (optional)
+- Docker và một GitHub personal access token (tùy chọn, cho GitHub MCP server)
 
-## Example Workflow
+## Ví Dụ Workflow
 
-```
-User: /generate-api-docs
+```text
+User: /documentation:generate-api-docs
 
 Claude:
-1. Scans all API endpoints in /src/api/
-2. Delegates to api-documenter subagent
-3. Extracts function signatures and JSDoc
-4. Organizes by module/endpoint
-5. Uses api-endpoint.md template
-6. Generates comprehensive markdown docs
-7. Includes curl, JavaScript, and Python examples
+1. Quét tất cả API endpoint trong /src/api/
+2. Giao việc cho tác nhân con api-documenter
+3. Trích xuất chữ ký hàm và JSDoc
+4. Sắp xếp theo module/endpoint
+5. Dùng template api-endpoint.md
+6. Tạo tài liệu markdown toàn diện
+7. Bao gồm ví dụ curl, JavaScript và Python
 
-Result:
-✅ API documentation generated
-📄 Files created:
+Kết quả:
+✅ Đã tạo tài liệu API
+📄 Các file đã tạo:
    - docs/api/users.md
    - docs/api/auth.md
    - docs/api/products.md
-📊 Coverage: 23/23 endpoints documented
+📊 Độ bao phủ: 23/23 endpoint đã có tài liệu
 ```
 
-## Templates Usage
+## Cách Dùng Template
 
-### API Endpoint Template
-Use for documenting REST API endpoints with full examples.
+### Template API Endpoint
+Dùng để viết tài liệu cho REST API endpoint kèm ví dụ đầy đủ.
 
-### Function Documentation Template
-Use for documenting individual functions/methods.
+### Template Tài Liệu Hàm
+Dùng để viết tài liệu cho từng hàm/phương thức.
 
-### ADR Template
-Use for documenting architectural decisions.
+### Template ADR
+Dùng để ghi lại các quyết định kiến trúc.
 
-## Configuration
+## Cấu Hình
 
-Set up GitHub token for documentation syncing:
+Thiết lập GitHub token để đồng bộ tài liệu:
 ```bash
 export GITHUB_TOKEN="your_github_token"
 ```
 
-## Best Practices
+`.mcp.json` truyền token này cho server dưới tên `GITHUB_PERSONAL_ACCESS_TOKEN`, biến mà server đọc. Chạy `/mcp` để kiểm tra `plugin:documentation:github` đã kết nối. Không có token, các lệnh vẫn hoạt động trên file cục bộ.
 
-- Keep documentation close to code
-- Update docs with code changes
-- Include practical examples
-- Validate regularly
-- Use templates for consistency
+## Best Practice
+
+- Giữ tài liệu gần với code
+- Cập nhật tài liệu cùng với các thay đổi code
+- Bao gồm các ví dụ thực tế
+- Kiểm tra định kỳ
+- Dùng template để đảm bảo tính nhất quán
 
 ---
 
 **Cập Nhật Lần Cuối**: Ngày 18 tháng 10 năm 2026
 **Phiên Bản Claude Code**: 2.1.302
 **Nguồn**:
+- https://code.claude.com/docs/en/plugins
+- https://github.com/anthropics/claude-code/releases/tag/v2.1.131
+- https://github.com/anthropics/claude-code/releases/tag/v2.1.138
+- https://code.claude.com/docs/en/model-config
 - https://code.claude.com/docs/en/plugins/cli-reference
 - https://code.claude.com/docs/en/plugins/install
+**Các Mô Hình Tương Thích**: Claude Fable 5.2, Claude Fable 5.1, Claude Fable 5, Claude Opus 5.5, Claude Opus 5, Claude Sonnet 5.5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 5.5, Claude Haiku 4.5

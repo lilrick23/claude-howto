@@ -57,15 +57,15 @@ Hooks are configured in settings files with a specific structure:
 | `hooks` | Array of hook definitions | `[{ "type": "command", ... }]` |
 | `type` | Hook type: `"command"` (bash), `"prompt"` (LLM), `"http"` (webhook), `"mcp_tool"` (MCP tool invocation, v2.1.118+), or `"agent"` (subagent) | `"command"` |
 | `command` | Shell command to execute | `"$CLAUDE_PROJECT_DIR/.claude/hooks/format.sh"` |
-| `timeout` | Optional timeout in seconds. Defaults: 600 for command/http/mcp_tool, 30 for prompt, 60 for agent. | `30` |
+| `timeout` | Optional timeout in seconds. Defaults: 600 for command/http/mcp_tool, 30 for prompt, 60 for agent. For prompt and agent hooks, a value under 1 counts as 1 second (v2.1.312+). | `30` |
 | `once` | If `true`, the hook is removed after its first successful run (failed/blocked/timed-out runs keep it). Skill frontmatter only; ignored in settings and agent frontmatter | `true` |
 | `async` | If `true`, runs in the background without blocking | `true` |
 | `asyncRewake` | If `true`, runs in the background and wakes Claude on exit code 2. Implies `async`. | `true` |
-| `shell` | Accepts `"bash"` or `"powershell"`. Defaults to `"bash"`, or to `"powershell"` on Windows when Git Bash isn't installed. | `"bash"` |
+| `shell` | Accepts `"bash"` or `"powershell"`. Defaults to `"bash"`, or to `"powershell"` on Windows when Git Bash isn't installed. A PowerShell hook's exit code 2 blocks only from v2.1.309; upgrade before relying on a PowerShell guard hook. | `"bash"` |
 | `statusMessage` | Custom spinner message displayed while the hook runs | `"Formatting…"` |
-| `onFailure` | What happens to the action when a command or HTTP hook fails (can't start, times out, exits with an unexpected code): `"continue"` (default) or `"block"` (v2.1.295+) | `"block"` |
+| `onFailure` | What happens to the action when a command or HTTP hook fails (can't start, times out, exits with an unexpected code): `"continue"` (default) or `"block"` (v2.1.295+). Agent SDK hook callbacks set this on the matcher: `onFailure: "block"` in TypeScript (Agent SDK v0.3.317+) or `on_failure="block"` in Python (v0.2.177+) blocks the action when the callback fails, instead of letting it run. | `"block"` |
 
-> **Note**: Some events lower the default timeout. `UserPromptSubmit` lowers the `command`, `http`, and `mcp_tool` default to 30 seconds, and `MessageDisplay` lowers it to 10 seconds. `SessionEnd` hooks share a 1.5-second budget; if your settings set a longer per-hook `timeout`, Claude Code raises that budget to match, up to 60 seconds.
+> **Note**: Some events lower the default timeout. `UserPromptSubmit` lowers the `command`, `http`, and `mcp_tool` default to 30 seconds, and `MessageDisplay` lowers it to 10 seconds. `SessionEnd` hooks share a 1.5-second budget; if your settings set a longer per-hook `timeout`, Claude Code raises that budget to match, up to 60 seconds. In `claude -p` and Agent SDK sessions, Claude Code sends a progress heartbeat every 30 seconds while hooks run long (v2.1.323), so a host such as Claude Desktop won't end the turn as hung once it includes that version.
 
 ### Matcher Patterns
 
@@ -127,6 +127,8 @@ The `if` field sits at the **hook-handler level** — a sibling of `type` and `c
 Examples of valid `if` patterns: `Edit(src/**)` (edits under `src/`), `Read(~/.ssh/**)` (reads of any SSH key), `Read(.env)` (any `.env` at or below the current directory), `Bash(git push *)` (only `git push` subcommands).
 
 > **v2.1.214 update**: A single-segment `dir/**` pattern in a hook `if` condition (like `Edit(src/**)`) now matches only `<cwd>/dir` — not that directory at any depth in the tree. Previously `src/**` also matched `foo/src/**`. Use `**/dir/**` if you need any-depth matching. **Important**: this narrowing applies only to hook `if:` conditions and allow-rule auto-approval — deny/ask permission rules still match `dir/**` at any depth.
+
+> **v2.1.314 update**: `if` patterns such as `Monitor(tail *)` match the shell commands the Monitor tool starts, the way `Bash(tail *)` matches Bash's. Hooks whose matcher is `Bash` also run on Monitor's shell commands; they can block or ask, but not approve or rewrite them.
 
 ## Hook Types
 
@@ -225,7 +227,7 @@ The `mcp_tool` type invokes a configured MCP tool directly; configuration refere
 - `"tool"` -- the tool name on that server to invoke
 - `"input"` -- optional arguments passed to the tool; string values support `${path}` substitution from the hook's JSON input, such as `"${tool_input.file_path}"`
 
-The tool's arguments come from `input` (with `${path}` substitution), not from the hook input directly. See [MCP server setup](../05-mcp/README.md) for configuring MCP servers.
+The tool's arguments come from `input` (with `${path}` substitution), not from the hook input directly. See [MCP server setup](../05-mcp/README.md) for configuring MCP servers. If Claude Code can't read the tool's answer (for example an answer over 16 MiB from a stdio or HTTP server), a `PreToolUse` `mcp_tool` hook gives no verdict and the tool call is refused (v2.1.321; earlier versions skipped the hook).
 
 ### Agent Hooks
 
@@ -329,15 +331,15 @@ Runs after Claude creates tool parameters and before processing. Use this to val
 - `permissionDecision`: `"allow"`, `"deny"`, `"ask"`, or `"defer"`
   - `"allow"` skips the permission prompt (except for tools that require user interaction, and connector tools your organization set to `ask`)
   - `"deny"` prevents the tool call
-  - `"ask"` prompts the user to confirm; the prompt names the plugin or skill the hook comes from (v2.1.301)
-  - `"defer"` exits gracefully so the tool can be resumed later; `permissionDecisionReason`, `updatedInput` and `additionalContext` are all ignored for this value
+  - `"ask"` prompts the user to confirm; the prompt names the plugin or skill the hook comes from (v2.1.301). In auto mode the call goes to the prompt instead of the classifier, except that the classifier can still deny calls Claude Code's own checks flag (protected paths, unsandboxed retries), and `SubagentHandback` calls run without a prompt — return `"deny"` to stop one
+  - `"defer"` ends the turn so the tool can be resumed later, and works only in non-interactive mode with `-p` and only when Claude makes a single tool call in the turn (interactive sessions log a warning and ignore it); the result carries `stop_reason: "tool_deferred"`. `permissionDecisionReason`, `updatedInput` and `additionalContext` are all ignored for this value. A `defer` that can't be honored no longer drops another hook's `ask` (v2.1.321). If a deferred call's tool is missing when you resume (`stop_reason: "tool_deferred_unavailable"`), the call stays pending and the run exits 1 (v2.1.319); to drop it, resume with a prompt and `CLAUDE_CODE_DROP_UNAVAILABLE_DEFERRED_TOOL=1`.
   - Deny and ask rules are still evaluated regardless of what the hook returns. When multiple `PreToolUse` hooks disagree, precedence is `deny` > `defer` > `ask` > `allow`
 - `permissionDecisionReason`: Explanation for decision. Shown to the user (not Claude) for `"ask"`; shown to Claude for `"deny"`; for `"allow"` and `"defer"`, written to the debug log only
-- `updatedInput`: Replacement tool input (replaces the whole input object). Since v2.1.300 it is validated like Claude's own input — unknown keys are dropped, and input the tool rejects denies the call.
+- `updatedInput`: Replacement tool input (replaces the whole input object). Since v2.1.300 it is validated like Claude's own input — unknown keys are dropped, and input the tool rejects denies the call. When several `PreToolUse` hooks return `updatedInput` for the same call, Claude Code doesn't merge the rewrites or guarantee which one the tool runs with, so let only one hook rewrite a given tool's input.
 
 ### PostToolUse
 
-Runs immediately after tool completion. Use for verification, logging, or providing context back to Claude.
+Runs immediately after tool completion. Since v2.1.319, if a message sent with `Ctrl+Enter` ends the turn while a tool is running and the tool then finishes, `PostToolUse` hooks still run on its result with 10 seconds to finish (use `async: true` for longer work); `Esc` cancels them. Use for verification, logging, or providing context back to Claude.
 
 **Configuration:**
 ```json
@@ -554,6 +556,7 @@ Updated matchers for notification events:
 - `agent_needs_input` - Background agent needs input (v2.1.198)
 - `agent_completed` - Background agent finished (v2.1.198)
 - `quota_auto_resume_fired` / `quota_auto_resume_stale` / `quota_auto_resume_disabled` - Usage-limit auto-resume outcomes (v2.1.234)
+- `plugin_notification` - A mod raised a notification with `$.ui.notify`; the hook's `title` is the mod's name unless the mod set one
 
 ### PreModelSwitch
 
@@ -661,7 +664,7 @@ hooks:
 ---
 ```
 
-**Supported events:** all hook events. Subagent hooks run only while the subagent is active (`Stop` → `SubagentStop`); skill hooks register when the skill is invoked and stay active for the rest of the session.
+**Supported events:** all hook events. Subagent hooks run only while the subagent is active (`Stop` → `SubagentStop`); skill hooks register when the skill is invoked and stay active for the rest of the session. Since v2.1.304, the skills of one source (your project, your personal skills folder, or one plugin) can register at most 1,024 hooks and 16,384 matcher characters per session; a skill past the limit registers none of its hooks (search the `claude --debug` log for `registers none of its hooks`).
 
 This allows defining hooks directly in the component that uses them, keeping related code together.
 
@@ -740,7 +743,7 @@ All hooks receive JSON input via stdin:
 | `agent_id` | Identifier of the agent running this hook |
 | `agent_type` | Agent name (for example, `"Explore"` or `"security-reviewer"`); present only when the session uses `--agent` or the hook fires inside a subagent |
 | `worktree` | Path to the git worktree, if the agent is running in one |
-| `effort.level` | (v2.1.133+) Active effort level: `low`, `medium`, `high`, `xhigh`, or `max` |
+| `effort.level` | (v2.1.133+) Effort level setting when the hook runs, including a skill's, subagent's, or `ultrathink` level: `low`, `medium`, `high`, `xhigh`, or `max`. A level you just changed can show here before it starts |
 
 ### Exit Codes
 
@@ -789,6 +792,8 @@ All hooks receive JSON input via stdin:
 
 > **Deprecated `PreToolUse` decision form**: For `PreToolUse`, the top-level `decision` and `reason` fields are **deprecated** — use `hookSpecificOutput.permissionDecision` (`allow` / `deny` / `ask` / `defer`) and `permissionDecisionReason` instead. Precedence among decisions is `deny` > `defer` > `ask` > `allow`. Note also that `suppressOutput` is accepted but **has no effect**.
 
+> **Output cap**: a hook's `additionalContext`, `systemMessage`, and `initialUserMessage` strings, and its plain stdout, are each capped at 10,000 characters. Longer output is saved to a file in the session directory and replaced with its path and a preview of the first 2,000 characters; Claude isn't asked to read the file. Since v2.1.314 this also applies to `PreCompact` hooks, whose very large output could make compaction fail or repeat.
+
 #### `terminalSequence` (v2.1.141)
 
 Hooks can emit raw OSC (operating system command) escape sequences by setting `terminalSequence` in the JSON output. The host writes the sequence to its controlling terminal when the hook returns — useful for desktop notifications, window-title updates, and terminal bells without requiring a TTY of your own.
@@ -818,7 +823,7 @@ Configure it on a `Stop` hook so the notification fires when Claude finishes a t
 | `${CLAUDE_PLUGIN_DATA}` | Plugin hooks | Path to plugin data directory |
 | `CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS` | SessionEnd hooks | Configurable timeout in milliseconds for SessionEnd hooks (overrides default) |
 | `CLAUDE_CODE_SESSION_ID` | Bash tool subprocesses (v2.1.132+) | Session UUID; matches the `session_id` field in hook input JSON. Use to correlate bash logs with hook telemetry. |
-| `CLAUDE_EFFORT` | Bash tool subprocesses (v2.1.133+) | Active effort level (`low`/`medium`/`high`/`xhigh`/`max`); matches `effort.level` in hook input JSON. |
+| `CLAUDE_EFFORT` | Bash tool subprocesses and hook commands (v2.1.133+) | Effort level setting when the subprocess starts (`low`/`medium`/`high`/`xhigh`/`max`); matches `effort.level` in hook input JSON. |
 | `CLAUDE_CODE_STOP_HOOK_BLOCK_CAP` | Process-wide (v2.1.143+) | Max consecutive Stop-hook blocks before Claude Code overrides the next block and ends the turn (default `8`). Set to `0` to disable the cap. |
 
 ## Prompt-Based Hooks
@@ -1065,7 +1070,7 @@ import sys
 import tempfile
 
 # Configuration
-CONTEXT_LIMIT = 1000000  # 1M on Opus 5, Sonnet 5, Opus 4.8, Sonnet 4.6; 200000 on Haiku 4.5 (adjust for your model)
+CONTEXT_LIMIT = 1000000  # 1M on Opus/Sonnet/Haiku 5.5, Opus 5, Sonnet 5, Opus 4.8, Sonnet 4.6; 200000 on Haiku 4.5 (adjust for your model)
 USE_TIKTOKEN = False    # Set True if tiktoken is installed for better accuracy
 
 
@@ -1223,7 +1228,7 @@ if __name__ == "__main__":
 
 ### Example 7: Seed Auto-Mode Permissions (One-Time Setup Script)
 
-A one-time setup script that seeds `~/.claude/settings.json` with safe permission rules equivalent to Claude Code's auto-mode baseline — 37 by default, up to 63 with every category flag enabled — without any hook, without remembering future choices. Run it once; safe to re-run (skips rules already present).
+A one-time setup script that seeds `~/.claude/settings.json` with safe permission rules equivalent to Claude Code's auto-mode baseline — 32 by default, up to 58 with every category flag enabled — without any hook, without remembering future choices. Run it once; safe to re-run (skips rules already present).
 
 **File:** `09-advanced-features/setup-auto-mode-permissions.py`
 
@@ -1245,7 +1250,7 @@ python3 09-advanced-features/setup-auto-mode-permissions.py
 | Git write (local) | `Bash(git add:*)`, `Bash(git commit:*)`, `Bash(git checkout:*)` |
 | Package managers | `Bash(npm ci:*)`, `Bash(npm install:*)`, `Bash(pip install:*)`, `Bash(pip3 install:*)` |
 | Build & test | `Bash(make:*)`, `Bash(pytest:*)`, `Bash(go test:*)` |
-| Common shell | `Bash(ls:*)`, `Bash(cat:*)`, `Bash(find:*)` |
+| Common shell | `Bash(ls:*)`, `Bash(cat:*)`, `Bash(wc:*)` |
 | GitHub CLI | `Bash(gh pr view:*)`, `Bash(gh pr create:*)`, `Bash(gh issue list:*)` |
 
 **What is intentionally excluded** (never added by this script):
@@ -1592,7 +1597,7 @@ echo $?
 | Aspect | Behavior |
 |--------|----------|
 | **Timeout** | 600 seconds default for command/http/mcp_tool (30 for prompt, 60 for agent); configurable per hook |
-| **Parallelization** | All matching hooks run in parallel; since v2.1.302, at most 12 prompt or agent hooks of one event run at a time and the rest wait their turn. |
+| **Parallelization** | All matching hooks run in parallel; since v2.1.312, at most 24 prompt or agent hooks run at a time per session (subagents included), plus at most 12 that have waited longer than their event's timeout, and the rest wait their turn (v2.1.302–v2.1.311: at most 12 of one event). |
 | **Deduplication** | Identical hook commands deduplicated |
 | **Environment** | Runs in current directory with Claude Code's environment |
 
@@ -1648,8 +1653,8 @@ Edit `~/.claude/settings.json` or `.claude/settings.json` with the hook configur
 
 ---
 
-**Last Updated**: October 18, 2026
-**Claude Code Version**: 2.1.302
+**Last Updated**: November 13, 2026
+**Claude Code Version**: 2.1.323
 **Sources**:
 - https://code.claude.com/docs/en/hooks
 - https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md
@@ -1666,4 +1671,24 @@ Edit `~/.claude/settings.json` or `.claude/settings.json` with the hook configur
 - https://code.claude.com/docs/en/changelog#2-1-300
 - https://code.claude.com/docs/en/changelog#2-1-301
 - https://code.claude.com/docs/en/changelog#2-1-302
-**Compatible Models**: Claude Fable 5, Claude Opus 5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 4.5
+- https://code.claude.com/docs/en/hooks#defer-a-tool-call-for-later
+- https://code.claude.com/docs/en/hooks-guide#limitations
+- https://code.claude.com/docs/en/hooks#notification
+- https://code.claude.com/docs/en/changelog#2-1-304
+- https://code.claude.com/docs/en/hooks#limits-on-skill-hooks
+- https://code.claude.com/docs/en/changelog#2-1-309
+- https://code.claude.com/docs/en/hooks#failed-hooks-on-windows-without-git-bash
+- https://code.claude.com/docs/en/changelog#2-1-312
+- https://code.claude.com/docs/en/changelog#2-1-314
+- https://code.claude.com/docs/en/hooks#pretooluse-ask-decisions-in-auto-mode
+- https://code.claude.com/docs/en/hooks#common-input-fields
+- https://code.claude.com/docs/en/hooks#json-output
+- https://code.claude.com/docs/en/env-vars#variables
+- https://code.claude.com/docs/en/model-config#extended-context
+- https://code.claude.com/docs/en/agent-sdk/hooks#block-the-action-when-a-callback-fails
+- https://code.claude.com/docs/en/hooks#mcp-tool-hook-fields
+- https://code.claude.com/docs/en/changelog#2-1-321
+- https://code.claude.com/docs/en/changelog#2-1-319
+- https://code.claude.com/docs/en/hooks#posttooluse-after-an-interrupt
+- https://code.claude.com/docs/en/changelog#2-1-323
+**Compatible Models**: Claude Fable 5.2, Claude Fable 5.1, Claude Fable 5, Claude Opus 5.5, Claude Opus 5, Claude Sonnet 5.5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 5.5, Claude Haiku 4.5

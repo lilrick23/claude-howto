@@ -87,13 +87,13 @@
 | `/fork` | 現在の会話をフォーク | 別案の探索 |
 | `/stats` | `/usage` の stats タブを開くエイリアス（v2.1.118+） | セッション指標の確認 |
 | `/statusline` | ステータスラインを設定 | ステータス表示のカスタマイズ |
-| `/stickers` | Claude Code ステッカーを注文 | 楽しいご褒美 |
+| `/stickers` | Claude Code ステッカーが入手可能か確認 | 楽しいご褒美 |
 | `/fast` | 高速出力モード切替 | 応答の高速化 |
 | `/terminal-setup` | ターミナル統合を設定 | ターミナル機能のセットアップ |
 | `/undo` | `/rewind` のエイリアス（v2.1.108） | `/rewind` と同じ |
 | `/upgrade` | アップグレードページを開いて上位プランに切り替え | プランのアップグレード |
 | `/team-onboarding` | このプロジェクトの Claude Code 利用状況からオンボーディングガイドを生成 | 新メンバーのオンボーディング（v2.1.101） |
-| `/code-review ultra` | 現在の変更に対するクラウドのマルチエージェントコードレビューを実行。`/ultrareview` はエイリアスとして残っており、`/code-review ultra` が推奨の呼び出し。Pro と Max では 3 回まで無料、以降は使用クレジットが必要 | マージ前の深いマルチエージェントレビュー（v2.1.112） |
+| `/code-review ultra` | 現在の変更に対するクラウドのマルチエージェントコードレビューを実行。`/ultrareview` はエイリアスとして残っており、`/code-review ultra` が推奨の呼び出し。Pro、Max、Ultra では 3 回まで無料、以降は使用クレジットが必要 | マージ前の深いマルチエージェントレビュー（v2.1.112） |
 | `/fewer-permission-prompts` | トランスクリプトをスキャンし、よく使う読取専用ツールの優先許可リストを提案 | プロジェクトでの権限プロンプト繰り返しを削減（v2.1.112） |
 
 ### カスタムコマンド（例）
@@ -257,8 +257,8 @@ cp -r 03-skills/* ~/.claude/skills/
 | プラグイン | 説明 | 構成要素 | 利用シーン | スコープ | インストール |
 |--------|-------------|------------|-------------|-------|--------------|
 | `pr-review` | PR レビューワークフロー | コマンド 3、エージェント 3、GitHub MCP | コードレビュー | プロジェクト | `claude --plugin-dir ./07-plugins/pr-review` |
-| `devops-automation` | デプロイと監視 | コマンド 4、エージェント 3、K8s MCP | DevOps タスク | プロジェクト | `/plugin install devops-automation` |
-| `documentation` | ドキュメント生成スイート | コマンド 4、エージェント 3、テンプレート | ドキュメント | プロジェクト | `/plugin install documentation` |
+| `devops-automation` | デプロイと監視 | コマンド 4、エージェント 3、フック 2 | DevOps タスク | プロジェクト | `claude --plugin-dir ./07-plugins/devops-automation` |
+| `documentation` | ドキュメント生成スイート | コマンド 4、エージェント 3、GitHub MCP、テンプレート | ドキュメント | プロジェクト | `claude --plugin-dir ./07-plugins/documentation` |
 
 > **スコープ**：`プロジェクト` = チーム共有、`ユーザー` = 個人ワークフロー
 
@@ -439,7 +439,7 @@ mkdir -p ~/.claude/hooks && cp 06-hooks/*.sh ~/.claude/hooks/ && chmod +x ~/.cla
 | **プロジェクトルール** | `.claude/rules/` | プロジェクト（チーム） | モジュール化されたプロジェクトルール |
 | **ユーザー** | `~/.claude/CLAUDE.md` | ユーザー（個人） | 個人の好み |
 | **ユーザールール** | `~/.claude/rules/` | ユーザー（個人） | モジュール化された個人ルール |
-| **ローカル** | `./CLAUDE.local.md` | ローカル（git 無視） | マシン固有の上書き（2026 年 3 月時点で公式ドキュメントに記載なし、レガシーの可能性） |
+| **ローカル** | `./CLAUDE.local.md` | ローカル（git 無視） | プロジェクト固有の個人設定。`CLAUDE.md` と一緒に読み込まれる。公式にサポート（[公式ドキュメント](https://code.claude.com/docs/en/memory)）、`.gitignore` に追加する |
 | **Auto Memory** | 自動 | セッション | 自動取得された洞察と訂正 |
 
 > **スコープ**：`組織` = 管理者管理、`プロジェクト` = git でチーム共有、`ユーザー` = 個人の好み、`ローカル` = コミット非対象、`セッション` = 自動管理
@@ -545,8 +545,8 @@ chmod +x ~/.claude/hooks/*.sh
 
 ---
 
-**最終更新**：2026 年 10 月 18 日
-**Claude Code バージョン**：2.1.302
+**最終更新**：2026 年 11 月 1 日
+**Claude Code バージョン**：2.1.316
 **情報源**：
 - https://code.claude.com/docs/en/tools-reference#task-tool-availability
 - https://code.claude.com/docs/en/overview
@@ -563,4 +563,6 @@ chmod +x ~/.claude/hooks/*.sh
 - https://code.claude.com/docs/en/chrome
 - https://code.claude.com/docs/en/plugins/manifest-reference
 - https://code.claude.com/docs/en/plugins/cli-reference
-**互換モデル**：Claude Fable 5、Claude Opus 5、Claude Sonnet 5、Claude Sonnet 4.6、Claude Opus 4.8、Claude Haiku 4.5
+- https://code.claude.com/docs/en/ultrareview#pricing-and-free-runs
+- https://code.claude.com/docs/en/feature-availability#ultra-plan
+**互換モデル**：Claude Fable 5.2、Claude Fable 5.1、Claude Fable 5、Claude Opus 5.5、Claude Opus 5、Claude Sonnet 5.5、Claude Sonnet 5、Claude Sonnet 4.6、Claude Opus 4.8、Claude Haiku 5.5、Claude Haiku 4.5

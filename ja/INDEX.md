@@ -238,7 +238,7 @@ blog-draft/
 
 機能のバンドル集。
 
-### PR レビュープラグイン（10 ファイル）
+### PR レビュープラグイン（11 ファイル）
 ```
 pr-review/
 ├── .claude-plugin/
@@ -251,16 +251,16 @@ pr-review/
 │   ├── security-reviewer.md          # セキュリティ専門家
 │   ├── test-checker.md               # テスト専門家
 │   └── performance-analyzer.md       # パフォーマンス専門家
-├── mcp/
-│   └── github-config.json            # GitHub 連携
+├── .mcp.json                         # GitHub 連携
 ├── hooks/
+│   ├── hooks.json                    # フック登録
 │   └── pre-review.js                 # レビュー前検証
 └── README.md                         # プラグインドキュメント
 ```
 
 **機能**：セキュリティ分析、テストカバレッジ、パフォーマンス影響
 
-**コマンド**：`/review-pr`、`/check-security`、`/check-tests`
+**コマンド**：`/pr-review:review-pr`、`/pr-review:check-security`、`/pr-review:check-tests`
 
 **インストール**：`claude --plugin-dir ./07-plugins/pr-review` （リポジトリのルートから）
 
@@ -280,9 +280,8 @@ devops-automation/
 │   ├── deployment-specialist.md      # デプロイ専門家
 │   ├── incident-commander.md         # インシデント指揮
 │   └── alert-analyzer.md             # アラート分析
-├── mcp/
-│   └── kubernetes-config.json        # Kubernetes 連携
 ├── hooks/
+│   ├── hooks.json                    # フック登録
 │   ├── pre-deploy.js                 # デプロイ前チェック
 │   └── post-deploy.js                # デプロイ後タスク
 ├── scripts/
@@ -294,13 +293,13 @@ devops-automation/
 
 **機能**：Kubernetes デプロイ、ロールバック、監視、インシデント対応
 
-**コマンド**：`/deploy`、`/rollback`、`/status`、`/incident`
+**コマンド**：`/devops-automation:deploy`、`/devops-automation:rollback`、`/devops-automation:status`、`/devops-automation:incident`
 
 **インストール**：`claude --plugin-dir ./07-plugins/devops-automation` （リポジトリのルートから）
 
 ---
 
-### ドキュメントプラグイン（14 ファイル）
+### ドキュメントプラグイン（13 ファイル）
 ```
 documentation/
 ├── .claude-plugin/
@@ -314,8 +313,7 @@ documentation/
 │   ├── api-documenter.md             # API ドキュメント専門家
 │   ├── code-commentator.md           # コードコメント専門家
 │   └── example-generator.md          # 例の作成
-├── mcp/
-│   └── github-docs-config.json       # GitHub 連携
+├── .mcp.json                         # GitHub 連携
 ├── templates/
 │   ├── api-endpoint.md               # API エンドポイントテンプレート
 │   ├── function-docs.md              # 関数ドキュメントテンプレート
@@ -325,7 +323,7 @@ documentation/
 
 **機能**：API ドキュメント、README 生成、ドキュメント同期、検証
 
-**コマンド**：`/generate-api-docs`、`/generate-readme`、`/sync-docs`、`/validate-docs`
+**コマンド**：`/documentation:generate-api-docs`、`/documentation:generate-readme`、`/documentation:sync-docs`、`/documentation:validate-docs`
 
 **インストール**：`claude --plugin-dir ./07-plugins/documentation` （リポジトリのルートから）
 
@@ -402,9 +400,9 @@ documentation/
 ### 権限モード
 - **default**：危険な操作で承認を求める
 - **acceptEdits**：ファイル編集を自動承認、それ以外は確認
-- **plan**：読み取り専用分析、変更なし
+- **plan**：変更せずに調査して変更案を示す — Claude はファイルを読み、探索のためにシェルコマンドを実行し、計画を書く。計画を承認するまで編集はブロックされる（bypass permissions が使える対話型ターミナルのセッションを除く）
 - **auto**：バックグラウンドの安全チェック付きで全操作を実行 — 分類器がコマンドと保護ディレクトリへの書き込みを審査する（`autoMode` 設定オブジェクトで構成）
-- **dontAsk**：事前承認済みのツールのみ — 本来プロンプトが出る呼び出しはすべて自動的に拒否される。Claude が実行できるのは `permissions.allow` に一致するもの、読み取り専用の Bash コマンド、`PreToolUse` フックが承認した呼び出しに限られる
+- **dontAsk**：事前承認済みのツールのみ — 本来プロンプトが出る呼び出しはすべて自動的に拒否される。Claude は引き続き、作業ディレクトリ内のファイル読み取り、読み取り専用の Bash コマンド、`permissions.allow` ルールまたは `PreToolUse` フックが承認した呼び出しの大半を実行する。インストールした mod も一部の呼び出しを承認できる
 - **bypassPermissions**：すべて承認（`--permission-mode bypassPermissions` または同等の `--dangerously-skip-permissions` で有効化）
 
 ### ヘッドレスモード（`claude -p`）
@@ -600,9 +598,9 @@ claude-howto/
 │   │   │   ├── security-reviewer.md
 │   │   │   ├── test-checker.md
 │   │   │   └── performance-analyzer.md
-│   │   ├── mcp/
-│   │   │   └── github-config.json
+│   │   ├── .mcp.json
 │   │   ├── hooks/
+│   │   │   ├── hooks.json
 │   │   │   └── pre-review.js
 │   │   └── README.md
 │   ├── devops-automation/
@@ -617,9 +615,8 @@ claude-howto/
 │   │   │   ├── deployment-specialist.md
 │   │   │   ├── incident-commander.md
 │   │   │   └── alert-analyzer.md
-│   │   ├── mcp/
-│   │   │   └── kubernetes-config.json
 │   │   ├── hooks/
+│   │   │   ├── hooks.json
 │   │   │   ├── pre-deploy.js
 │   │   │   └── post-deploy.js
 │   │   ├── scripts/
@@ -639,8 +636,7 @@ claude-howto/
 │   │   │   ├── api-documenter.md
 │   │   │   ├── code-commentator.md
 │   │   │   └── example-generator.md
-│   │   ├── mcp/
-│   │   │   └── github-docs-config.json
+│   │   ├── .mcp.json
 │   │   ├── templates/
 │   │   │   ├── api-endpoint.md
 │   │   │   ├── function-docs.md
@@ -755,7 +751,7 @@ claude --permission-mode acceptEdits   # 編集を自動承認
 claude --permission-mode auto          # 安全な操作を自動承認
 
 # CI/CD のためのヘッドレスモードで実行
-claude -p "Run tests and report results"
+claude -p "Run tests and report results" --permission-mode auto
 
 # バックグラウンドタスクを実行
 Run tests in background
@@ -884,9 +880,9 @@ Run tests in background
 
 ---
 
-**最終更新**：2026 年 10 月 18 日
-**Claude Code バージョン**：2.1.302
-**互換モデル**：Claude Sonnet 4.6、Claude Opus 4.7、Claude Haiku 4.5
+**最終更新**：2026 年 10 月 26 日
+**Claude Code バージョン**：2.1.310
+**互換モデル**：Claude Fable 5.2、Claude Fable 5.1、Claude Fable 5、Claude Opus 5.5、Claude Opus 5、Claude Sonnet 5.5、Claude Sonnet 5、Claude Sonnet 4.6、Claude Opus 4.8、Claude Haiku 5.5、Claude Haiku 4.5
 **例題総数**：100 ファイル超
 **カテゴリ**：10 機能
 **フック**：自動化スクリプト 8 個
@@ -904,3 +900,5 @@ Run tests in background
 - https://code.claude.com/docs/en/plugins/install
 - https://code.claude.com/docs/en/checkpointing
 - https://code.claude.com/docs/en/permission-modes
+- https://code.claude.com/docs/en/headless#auto-approve-tools
+- https://code.claude.com/docs/en/permission-modes#which-mode-a-non-interactive-run-starts-in

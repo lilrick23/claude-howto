@@ -67,10 +67,10 @@ chmod +x ~/.claude/hooks/*.sh
 
 ### Plugins
 ```bash
-# 从示例安装（如果已发布）
-claude --plugin-dir ./07-plugins/pr-review
-/plugin install devops-automation
-/plugin install documentation
+# 为单个会话加载示例（在仓库根目录运行）
+claude --plugin-dir ./07-plugins/pr-review \
+  --plugin-dir ./07-plugins/devops-automation \
+  --plugin-dir ./07-plugins/documentation
 ```
 
 ### Checkpoints
@@ -152,7 +152,7 @@ cp -r 03-skills/code-review-specialist ~/.claude/skills/
 
 # 方法 4：插件（推荐）
 claude --plugin-dir ./07-plugins/pr-review
-# 使用：/review-pr
+# 使用：/pr-review:review-pr
 ```
 
 ### 文档
@@ -167,15 +167,15 @@ cp 04-subagents/documentation-writer.md .claude/agents/
 cp -r 03-skills/doc-generator ~/.claude/skills/
 
 # 插件（完整方案）
-/plugin install documentation
+claude --plugin-dir ./07-plugins/documentation
 ```
 
 ### DevOps
 ```bash
 # 完整插件
-/plugin install devops-automation
+claude --plugin-dir ./07-plugins/devops-automation
 
-# 命令：/deploy、/rollback、/status、/incident
+# 命令：/devops-automation:deploy、/devops-automation:rollback、/devops-automation:status、/devops-automation:incident
 ```
 
 ### 团队规范
@@ -224,7 +224,9 @@ claude --enable-auto-mode -p "重构并测试 auth 模块"
 
 ### CI/CD 集成
 ```bash
-# 以 headless 模式运行（非交互）
+# 以 headless 模式运行（非交互）。未指定权限模式时，-p 以 Manual 模式启动
+# （配置值 "default"，v2.1.302+）：需要审批的工具调用会被拒绝，因此请添加
+# --allowedTools "Bash(npm test *)" 或 --permission-mode auto
 claude -p "运行所有测试并生成报告"
 
 # 在 CI 中搭配权限模式
@@ -378,9 +380,9 @@ cp -r 03-skills/code-review-specialist ~/.claude/skills/
 claude --plugin-dir ./07-plugins/pr-review
 
 # 使用打包功能
-/review-pr
-/check-security
-/check-tests
+/pr-review:review-pr
+/pr-review:check-security
+/pr-review:check-tests
 ```
 
 ---
@@ -402,7 +404,7 @@ claude --plugin-dir ./07-plugins/pr-review
 | **Task List** | 管理后台任务 | `/tasks`（别名 `/bashes`） |
 | **Auto Memory** | 从对话中自动保存记忆 | Claude 将笔记保存到 `~/.claude/projects/<project>/memory/MEMORY.md`；用 `/memory` 管理 |
 | **Git Worktrees** | 用于并行开发的隔离工作区 | `claude --worktree <name>`（或 `-w`） |
-| **Model Selection** | 在 Fable 5.1、Fable 5、Opus 5、Sonnet 5.5、Sonnet 5、Sonnet 4.6、Opus 4.8 和 Haiku 4.5 之间切换 | `/model` 或 `--model` 参数（在 Anthropic API 上 `sonnet` 指向 Sonnet 5.5，v2.1.284+） |
+| **Model Selection** | 在 Fable 5.2、Fable 5.1、Fable 5、Opus 5.5、Opus 5、Sonnet 5.5、Sonnet 5、Sonnet 4.6、Opus 4.8、Haiku 5.5 和 Haiku 4.5 之间切换 | `/model` 或 `--model` 参数（在 Anthropic API 上 `sonnet` 指向 Sonnet 5.5，v2.1.284+） |
 | **Agent Teams** | 协调多个 agent 执行任务 | 通过环境变量 `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` 启用（实验性） |
 | **Scheduled Tasks** | 使用 `/loop` 运行周期任务 | `/loop 5m /command` 或 CronCreate 工具 |
 | **Chrome Integration** | 浏览器自动化 | `--chrome` 参数或 `/chrome` 命令 |
@@ -510,8 +512,8 @@ echo $GITHUB_PERSONAL_ACCESS_TOKEN
 
 ---
 
-**最后更新**：2026 年 10 月 18 日
-**Claude Code 版本**：2.1.302
+**最后更新**：2026 年 11 月 12 日
+**Claude Code 版本**：2.1.322
 **来源**：
 - https://code.claude.com/docs/en/hooks
 - https://code.claude.com/docs/en/commands
@@ -523,3 +525,6 @@ echo $GITHUB_PERSONAL_ACCESS_TOKEN
 - https://code.claude.com/docs/en/managed-settings
 - https://code.claude.com/docs/en/scheduled-tasks
 - https://code.claude.com/docs/en/model-config
+- https://code.claude.com/docs/en/headless
+- https://code.claude.com/docs/en/permission-modes#tool-calls-denied-in-claude-p-and-agent-sdk-runs
+- https://code.claude.com/docs/en/model-config#work-with-fable

@@ -28,11 +28,11 @@ graph TD
 
 Since **v2.1.113**, the Claude Code CLI launches a **native per-platform binary** (macOS, Linux, Windows) via optional npm dependencies. The binary is matched to your OS and architecture at install time — the older bundled-JavaScript runtime is no longer the default on macOS or Linux.
 
-The **recommended install** is the native installer (`curl -fsSL https://claude.ai/install.sh | bash`; on Windows `irm https://claude.ai/install.ps1 | iex`). npm installation is deprecated in the official README; prefer the native installer, Homebrew (`brew install --cask claude-code`) or WinGet (`winget install Anthropic.ClaudeCode`). For reference, `npm install -g @anthropic-ai/claude-code` (Node.js 22+) installs the same native binary through a per-platform optional dependency.
+The **recommended install** is the native installer (`curl -fsSL https://claude.ai/install.sh | bash`; on Windows `irm https://claude.ai/install.ps1 | iex`). npm installation is deprecated in the official README; prefer the native installer, Homebrew (`brew install --cask claude-code`) or WinGet (`winget install Anthropic.ClaudeCode`). For reference, `npm install -g @anthropic-ai/claude-code` (Node.js 22+) installs the same native binary through a per-platform optional dependency. On npm 12, which skips Claude Code's postinstall step by default, that install ends with `Error: claude native binary not installed.` — switch to the native installer or follow [Fix an npm 12 install](https://code.claude.com/docs/en/troubleshoot-install#fix-an-npm-12-install).
 
 **Download host** (v2.1.116+): native-binary artifacts are served from `https://downloads.claude.ai/claude-code-releases`.
 
-> **Corporate / proxy users**: If your network requires an explicit allowlist, add `downloads.claude.ai` (and `https://downloads.claude.ai/claude-code-releases`) to your proxy egress rules. Environments that previously allowlisted only `storage.googleapis.com` or the npm registry will need to be updated or `claude update` and the initial install will fail.
+> **Corporate / proxy users**: If your network requires an explicit allowlist, add `downloads.claude.ai` (and `https://downloads.claude.ai/claude-code-releases`) to your proxy egress rules. Environments that previously allowlisted only `storage.googleapis.com` or the npm registry will need to be updated or `claude update` and the initial install will fail. On Bedrock, Mantle, Vertex, and Foundry, Claude Code also loads model settings from a signed file on `downloads.claude.ai` (v2.1.311); set `CLAUDE_CODE_MODEL_CATALOG=off` to turn that off.
 
 The older JavaScript bundle is still produced for Windows and for environments that pin to it; those installs continue to ship Glob and Grep as first-class tools (see the Glob/Grep footnote under [Tools](#tool--permission-management)).
 
@@ -48,6 +48,7 @@ The older JavaScript bundle is still produced for Windows and for environments t
 | `claude -c -p "query"` | Continue in print mode | `claude -c -p "check for type errors"` |
 | `claude -r "<session>" "query"` | Resume session by ID or name | `claude -r "auth-refactor" "finish this PR"` |
 | `claude update` | Update to latest version | `claude update` |
+| `/restart` (slash command, alias `/update`) | Restart Claude Code and resume this session to apply an installed update. Pro, Max, and Ultra plans; native install on macOS or Linux, not WSL (v2.1.288+) | `/restart` |
 | `/doctor` (slash command) | Diagnose installation, config, and plugin health. Since v2.1.116 it can be opened **while Claude is responding**, shows status icons inline, and accepts the `f` keypress to auto-fix detected issues. v2.1.178 refreshed the layout to a flat tree with clearer status icons and highlighted commands | run `/doctor` inside the REPL |
 | `claude mcp` | Configure MCP servers (incl. `login`/`logout` for auth, v2.1.186+) | See [MCP documentation](../05-mcp/) |
 | `claude mcp serve` | Run Claude Code as an MCP server | `claude mcp serve` |
@@ -62,11 +63,11 @@ The older JavaScript bundle is still produced for Windows and for environments t
 | `claude install [version]` | Install a specific native-binary version. Accepts `stable`, `latest`, or an explicit version string | `claude install 2.1.131` |
 | `claude purge [path]` | Delete all local Claude Code state for a project (transcripts, tasks, debug logs, file-edit history, prompt history, and `~/.claude.json` entry). Omit `[path]` for an interactive picker. Flags: `--dry-run` to preview, `-y/--yes` to skip confirmation, `-i/--interactive` to confirm each item, `--all` for every project (v2.1.126+) — renamed from `claude project purge` in v2.1.288; the old name still works and prints a notice | `claude purge ~/work/repo --dry-run` |
 | `claude plugin prune` | Remove orphaned auto-installed plugin dependencies (parent plugin gone). `plugin uninstall --prune` does the same cascade after uninstalling a target (v2.1.121+) | `claude plugin prune` |
-| `claude ultrareview [target]` | Run `/ultrareview` non-interactively. Prints findings to stdout, exits 0 on success / 1 on failure. Use `--json` for raw payload, `--timeout <minutes>` to override the 45-minute default (since v2.1.260), and `--post` / `--no-post` to control whether findings are posted back to the PR. **Requires Claude Code v2.1.227 or later** | `claude ultrareview 1234 --json --no-post` |
-| `claude self-hosted-runner [setup\|doctor\|orchestrator]` | Start a runner that hosts Claude Code cloud sessions on your own machine or container. `setup` is a guided operator walkthrough, `doctor` diagnoses a deployed runner, `orchestrator` spawns on-demand runners (its `--shutdown-drain-sec`, v2.1.299, lets the in-flight poll and spawn hooks finish on SIGTERM). **Team and Enterprise plans; requires Claude Code v2.1.224 or later.** On Windows, startup requires an explicit `--base-dir` (v2.1.229) | `claude self-hosted-runner setup` |
+| `claude ultrareview [target]` | Run `/ultrareview` non-interactively. Prints findings to stdout, exits 0 on success / 1 on failure / 130 if interrupted with Ctrl-C. Use `--json` for raw payload, `--timeout <minutes>` to override the 45-minute default (since v2.1.260), and `--post` / `--no-post` to control whether findings are posted back to the PR. In a folder you haven't trusted it asks on a terminal and otherwise exits 1; in scripts and CI, append `--trust-workspace` after the target (v2.1.309+). **Requires Claude Code v2.1.227 or later** | `claude ultrareview 1234 --json --no-post` |
+| `claude self-hosted-runner [setup\|doctor\|orchestrator]` | Start a runner that hosts Claude Code cloud sessions on your own machine or container. `setup` is a guided operator walkthrough, `doctor` diagnoses a deployed runner, `orchestrator` spawns on-demand runners (its `--shutdown-drain-sec`, v2.1.299, lets the in-flight poll and spawn hooks finish on SIGTERM). **Team and Enterprise plans; requires Claude Code v2.1.224 or later.** On Windows, startup requires an explicit `--base-dir` (v2.1.229). Since v2.1.307 checkout hooks are stopped after 30 minutes by default, which fails the session's setup; raise `--checkout-hook-timeout-min` or set it to `0`. Since v2.1.311, `--hold-idle-file <path>` and `--max-hold-min <n>` (default `1440`, `0` turns it off) keep an idle session while your host reports processes it left running | `claude self-hosted-runner setup` |
 | `claude auth login` | Log in (supports `--email`, `--sso`). Since v2.1.126, accepts the OAuth code pasted into the terminal as a fallback when the browser callback can't reach localhost (WSL2, SSH, containers) | `claude auth login --email user@example.com` |
 | `claude auth logout` | Log out of current account | `claude auth logout` |
-| `claude auth status` | Check auth status (exit 0 if logged in, 1 if not) | `claude auth status` |
+| `claude auth status` | Check auth status (exit 0 if logged in, 1 if not); since v2.1.318 its output includes `loginExpiresAt`, the date a stored claude.ai sign-in ends | `claude auth status` |
 
 ## Core Flags
 
@@ -229,7 +230,7 @@ claude -p --system-prompt-file ./prompts/code-reviewer.txt "review main.py"
 | `--disallowedTools` | Tools removed from context | `"Bash(rm:*)" "Edit"` |
 | `--dangerously-skip-permissions` | Skip all permission prompts | `claude --dangerously-skip-permissions` |
 | `--permission-mode` | Begin in specified permission mode | `claude --permission-mode auto` |
-| `--permission-prompt-tool` | MCP tool for permission handling | `claude -p --permission-prompt-tool mcp_auth "query"` |
+| `--permission-prompt-tool` | MCP tool that answers permission prompts in print mode; pass its full `mcp__<server>__<tool>` name, from a server the run loads | `claude -p --mcp-config ./mcp.json --permission-prompt-tool mcp__permissions__approve "query"` |
 | `--permission-prompts` | (v2.1.259) Who answers permission prompts in print mode. Default `host` sends them to the Agent SDK host or the `--permission-prompt-tool` tool; pass `none` when nobody can answer and Claude Code denies them instead | `claude -p --permission-prompts none "query"` |
 
 > **v2.1.111 update**: `--enable-auto-mode` was removed; auto mode is now in the `Shift+Tab` cycle by default — use `--permission-mode auto` to start in it directly.
@@ -241,6 +242,12 @@ claude -p --system-prompt-file ./prompts/code-reviewer.txt "review main.py"
 > **`--permission-mode` honored on resume (v2.1.132+)**: `claude -p --continue --permission-mode plan` (and `--resume`) now respects the flag. Earlier versions silently dropped `--permission-mode` when resuming a session, so a plan-mode session resumed without re-passing the flag would silently downgrade — that's fixed.
 
 > **Permission hardening (v2.1.214)**: Docker/Podman commands using daemon-redirect flags (e.g. `--url`, `--connection`, `--identity`) now require a permission prompt instead of running automatically. `file` commands using `-m`/`--magic-file` or `-f`/`--files-from` also now require permission. Bash commands over 10,000 characters always prompt for permission, regardless of allow rules.
+
+> **Permission hardening (v2.1.319–v2.1.321)**: the Bash tool now asks before running `which` with flags outside a lookup/display set; read-only commands wrapped in a plain `timeout DURATION` (such as `timeout 30 rg foo`) no longer prompt; a session's exact Bash or PowerShell ask rule is refused, not asked about, when a broader deny rule covers the command (v2.1.319). `cp` and `mv` spelled by a path, such as `/bin/cp`, get the same path checks as `cp` and `mv`, and deny rules and protected-file prompts now apply to the file that a `cp` or `mv` into a directory writes (v2.1.321).
+
+> **Permission hardening (v2.1.323)**: Claude Code warns at start-up about a Bash allow rule with a `*` in a variable's value, such as `Bash(PORT=* npm run dev)`. It fixes allow rules with an attached wildcard, such as `Bash(ls*)`, that skipped the permission prompt in some cases; a rule that names a variable, such as `Bash(NODE_ENV*)`, now asks. Bash deny and ask rules no longer miss some commands run through `sudo`, `env` and similar wrappers, and a case where the Write and Edit tools could write to a path a `Read` deny rule covers is fixed. With `plansDirectory` set, a plan-file write that can't be shown to stay inside the project is refused. Bash prompts no longer offer "don't ask again" for commands that write to sensitive paths such as `.git` or `.claude`, where the saved rule didn't stop the next prompt, and "don't ask again" on an allow rule that looks like it holds a secret, or that would be saved to a `settings.local.json` that git tracks, lasts for the session only and isn't saved.
+
+> **Permission hardening (v2.1.325)**: read-only git commands now ask first in a repository that isn't the project's or one you trusted; to run them there without prompts, name that repository with `--add-dir`, not the `additionalDirectories` setting. Relative deny and ask rules such as `Read(./.env)` keep covering the project after a `cd`, and now also apply in added directories. Some compound Bash commands that could run without asking now ask, a Bash allow rule can no longer run a different program than the one it names, and some deny and ask rules that didn't apply to certain Bash commands now do. With `plansDirectory` set, an approved plan edit that the folder can't take is saved in the default plans folder, and a warning says where and why. These come from the changelog; the permissions docs don't list the git and added-directory changes yet.
 
 ### Permission Examples
 
@@ -351,7 +358,7 @@ claude --resume feature-auth --fork-session "try alternative approach"
 claude --session-id "550e8400-e29b-41d4-a716-446655440000" "continue"
 ```
 
-> **v2.1.299**: The resume command printed at exit names the session by its ID.
+> **v2.1.299**: The resume command printed at exit names the session by its ID. Since v2.1.317 it also repeats the flags you launched with (for example `--chrome --debug`) ahead of `--resume`.
 
 ### Session Fork
 
@@ -409,11 +416,11 @@ claude purge --all --interactive
 | `--json-schema` | Validated JSON output | `claude -p --json-schema '{"type":"object"}' "q"` |
 | `--ax-screen-reader` | Plain-text rendering mode for screen readers (v2.1.208) | `claude --ax-screen-reader` |
 
-### Platform & Theme Notes (v2.1.112)
+### Platform & Theme Notes (v2.1.111)
 
 - **PowerShell tool on Windows**: A dedicated PowerShell tool is rolling out on Windows and is controllable via environment variable.
 - **Auto (match terminal) theme**: The new "Auto (match terminal)" theme syncs Claude Code's light/dark appearance with your terminal.
-- **Quieter permission prompts**: Read-only `Bash` invocations and `Glob` patterns no longer trigger permission prompts.
+- **Quieter permission prompts**: Read-only Bash commands with glob patterns, such as `ls *.ts`, and commands starting with `cd <project-dir> &&` no longer trigger a permission prompt.
 
 ### Advanced Examples
 
@@ -532,9 +539,12 @@ When you dispatch a session from the view (or via `claude --bg <prompt>`), you c
 | `--plugin-dir <path>` | v2.1.142 | Use a specific plugin directory for the dispatched session |
 | `--permission-mode <mode>` | v2.1.142 | Set permission mode (`plan`, `acceptEdits`, `auto`, etc.) for the dispatched session |
 | `--model <model>` | v2.1.142 | Pin a model for the dispatched session |
-| `--effort <level>` | v2.1.142 | Pin an effort level (`low`/`medium`/`high`/`xhigh`/`max`) |
+| `--effort <level>` | v2.1.142 | Set the dispatched session's starting effort level (`low`/`medium`/`high`/`xhigh`/`max`) — a level picked in the session or `CLAUDE_CODE_EFFORT_LEVEL` outranks it |
 | `--dangerously-skip-permissions` | v2.1.142 | Run the dispatched session without permission prompts (use only in sandboxes) |
+| `--agent <name>` | — | Subagent used when a dispatch prompt doesn't name one (with `@name` or as the first word); defaults to the `agent` setting, otherwise the built-in `claude` agent |
 | `--json` | v2.1.145 | Print the agent list as machine-readable JSON for scripting (status bars, session pickers, tmux-resurrect integrations) |
+
+Before v2.1.321, `--permission-mode`, `--dangerously-skip-permissions`, `--model`, `--effort` and `--agent` were ignored when typed before `agents` together with a flag such as `--verbose`.
 
 Sessions that finish their work but leave a background shell open move from "Working" to "Completed" (v2.1.141 fix). Within an attached agent session, `Shift+Tab` cycles through permission modes including auto mode (v2.1.143).
 
@@ -573,7 +583,7 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           claude -p --output-format json \
-            --max-turns 1 \
+            --max-turns 5 \
             "Review the changes in this PR for:
             - Security vulnerabilities
             - Performance issues
@@ -609,15 +619,17 @@ pipeline {
 }
 ```
 
-**Headless `ultrareview` (requires v2.1.227+):**
+**Headless `ultrareview` (requires v2.1.227+; `--trust-workspace` requires v2.1.309+):**
 
 ```yaml
 # .github/workflows/ultrareview.yml
+# Check out a branch you trust, e.g. actions/checkout with `ref: ${{ github.base_ref }}`;
+# ultrareview clones the pull request itself in the cloud.
 - name: Claude ultrareview
-  run: claude ultrareview ${{ github.event.pull_request.number }} --json --no-post > review.json
+  run: claude ultrareview ${{ github.event.pull_request.number }} --trust-workspace --json --no-post > review.json
 ```
 
-`claude ultrareview` exits 0 on a clean review and 1 when findings are reported, so it's a drop-in PR gate. Use `--timeout <minutes>` to override the 45-minute default (since v2.1.260). `--post` posts the finished findings to the pull request; `--no-post` keeps them in stdout only, which is what you want when a later CI step formats the report itself.
+`claude ultrareview` exits 0 when the review completes, with or without findings, 1 when it fails to launch, errors, times out, or the folder isn't trusted, and 130 when you press Ctrl-C while it's launching the review, waiting for findings, or posting the `--post` comment, so gate a PR on the findings in `review.json`, not on the exit code. In CI the run can't ask whether you trust the checkout, so since v2.1.309 it exits 1 with `Error: Workspace not trusted` unless you pass `--trust-workspace` after the PR number or base branch (it takes no value) or set `CLAUDE_CODE_DISABLE_ULTRAREVIEW_TRUST_CHECK=1` in the job's environment. Use either only on a checkout you trust. Use `--timeout <minutes>` to override the 45-minute default (since v2.1.260). `--post` posts the finished findings to the pull request; `--no-post` keeps them in stdout only, which is what you want when a later CI step formats the report itself.
 
 ### 2. Script Piping
 
@@ -795,6 +807,8 @@ claude -p --output-format json --json-schema "$SCHEMA" "find todos" | jq '.struc
 claude -p --output-format json --json-schema "$SCHEMA" "list improvements" | jq '.structured_output.improvements | map({title: .title, priority: .priority})'
 ```
 
+With a stored claude.ai sign-in, JSON results also carry `credential_expires_at`, and text output prints a one-line stderr warning starting 10 days before that sign-in ends (v2.1.318).
+
 ---
 
 ## Models
@@ -803,7 +817,7 @@ Claude Code supports multiple models with different capabilities:
 
 | Model | ID | Context Window | Notes |
 |-------|-----|----------------|-------|
-| Opus 5.5 | `claude-opus-5-5` | 1M tokens | Default model and default Opus model since v2.1.280 on Pro, Max, Team, Enterprise, the Anthropic API, Claude Platform on AWS, Amazon Bedrock, and Google Cloud's Agent Platform (Pro and Team Standard previously defaulted to Sonnet 5); Microsoft Foundry still resolves `opus` to Opus 4.6 and `default` to Sonnet 4.5. Adaptive effort levels `low → max`, default effort `medium`; thinking can't be turned off. Requires v2.1.280+ |
+| Opus 5.5 | `claude-opus-5-5` | 1M tokens | Default model and default Opus model since v2.1.280 on Pro, Max, Ultra, Team, Enterprise, the Anthropic API, Claude Platform on AWS, Amazon Bedrock, and Google Cloud's Agent Platform (Pro and Team Standard previously defaulted to Sonnet 5); Microsoft Foundry still resolves `opus` to Opus 4.6 and `default` to Sonnet 4.5. Adaptive effort levels `low → max`, default effort `medium`; thinking can't be turned off. Requires v2.1.280+ |
 | Sonnet 5.5 | `claude-sonnet-5-5` | 1M tokens | Default Sonnet model on the Anthropic API since v2.1.284 (the `sonnet` alias resolves to it there); adaptive effort levels `low → max`, default effort `medium`; thinking can't be turned off; not available in fast mode. Requires v2.1.284+ |
 | Haiku 5.5 | `claude-haiku-5-5` | 1M tokens | Default Haiku model on the Anthropic API since v2.1.293 (the `haiku` alias resolves to it there; Bedrock, Vertex, Foundry, and Claude Platform on AWS still resolve `haiku` to Haiku 4.5); adaptive effort levels `low → max`, default effort `medium`; thinking can't be turned off. Requires v2.1.293+ |
 | Sonnet 5 | `claude-sonnet-5` | 1M tokens | Default on Pro / Team Standard seats from v2.1.197 until v2.1.280, when those plans moved to Opus 5.5; native 1M-token context window |
@@ -811,10 +825,11 @@ Claude Code supports multiple models with different capabilities:
 | Opus 4.8 | `claude-opus-4-8` | 1M tokens | Previous flagship Opus, still selectable; adaptive effort levels `low → max`; default effort `high` (v2.1.154) |
 | Sonnet 4.6 | `claude-sonnet-4-6` | 1M tokens | Balanced speed and capability; default effort for Pro/Max subscribers raised from `medium` to `high` in v2.1.117 |
 | Haiku 4.5 | `claude-haiku-4-5` | 200K tokens | Previous Haiku, still the `haiku` alias on Bedrock, Vertex, Foundry, and Claude Platform on AWS; no effort levels |
-| Fable 5.1 | `claude-fable-5-1` | — | Current Fable model; the `fable` alias resolves to it (v2.1.257) |
+| Fable 5.2 | `claude-fable-5-2` | 1M tokens | Current Fable model since v2.1.321; the `fable` alias resolves to it except in Claude apps gateway sessions (Fable 5 there); default effort `medium`; supports fast mode. Requires v2.1.321+ |
+| Fable 5.1 | `claude-fable-5-1` | — | Previous Fable model (the `fable` alias pointed to it from v2.1.257 until v2.1.321); select it with `/model claude-fable-5-1`. Requires v2.1.257+ |
 | Fable 5 | `claude-fable-5` | — | Mythos-class model, made safe for general use (v2.1.170) |
 
-> **Note**: Sonnet 4.5 retires on November 30, 2026 on the Claude API, Claude Platform on AWS and Microsoft Foundry. On Foundry, where `default` and `sonnet` still resolve to Sonnet 4.5, set a newer model explicitly.
+> **Note**: Sonnet 4.5 retires on November 30, 2026 on the Claude API, Claude Platform on AWS, Claude Models on Google Cloud (Anthropic managed) and Microsoft Foundry; Amazon Bedrock and Google Cloud's Agent Platform set their own dates. On Foundry, where `default` and `sonnet` still resolve to Sonnet 4.5, set a newer model explicitly.
 
 ### Model Selection
 
@@ -831,13 +846,15 @@ claude --model opusplan "design and implement the API"
 /fast
 ```
 
-> **Fable 5.1 and the `fable` alias (v2.1.257)**: Fable 5.1 (`claude-fable-5-1`) ships in **v2.1.257**, and the `fable` alias now resolves to it rather than to Fable 5. The official model-config page says Fable 5.1 "requires Claude Code v2.1.255 or later", but 2.1.255 was never published — v2.1.257 is the first release users can actually install it with. On a Claude apps gateway, `fable` and `best` still resolve to **Fable 5**; pick 5.1 explicitly in `/model` there. If the newest Fable model isn't available to your organization, `fable` and `best` retry once on the previous Fable model (v2.1.301).
+> **Fable 5.2 and the `fable` alias (v2.1.321)**: Fable 5.2 (`claude-fable-5-2`) ships in **v2.1.321**, and `fable` now resolves to it, except in Claude apps gateway sessions, where `fable` still resolves to **Fable 5** (run `/model claude-fable-5-2` there if your gateway serves it). Fable 5.2 has a 1M context window and costs $8/$40 per Mtok, with $0.20/Mtok cache reads. The `best` alias now resolves to the same model as `opus`; before v2.1.321 it used the model `fable` resolved to, where Fable is available. Fable 5.1 (`claude-fable-5-1`, v2.1.257+) and Fable 5 stay selectable by model ID. On Pro, Max, and Ultra plans, a `claude-fable-5-1` model saved in your user settings moves to `fable` the first time you run v2.1.321 or later; on Team and Enterprise plans the move waits for your organization's settings. Console accounts, third-party providers, and project, local, or managed settings keep `claude-fable-5-1`; run `/model claude-fable-5-1` to switch back. If the newest Fable model isn't available to your organization, `fable` retries once on the previous Fable model (v2.1.301).
 
-> **Fast Mode runs on Opus 5.5, Opus 5, and Opus 4.8 (v2.1.280)**: As of v2.1.219, `/fast` applies to **Opus 5 and Opus 4.8** — Opus 4.7 was removed from fast mode. Opus 5's fast mode is billed at $10/$50 per Mtok. Fast mode first moved to Opus 4.8 in v2.1.154 (about 2× the standard rate for ~2.5× the output speed), having flipped from Opus 4.6 to Opus 4.7 in v2.1.142. The `CLAUDE_CODE_OPUS_4_6_FAST_MODE_OVERRIDE` env var was **deprecated in v2.1.154 and removed on 2026-06-01**; fast mode is no longer available on Opus 4.6 — select Opus 5 or Opus 4.8 instead. **Since v2.1.280, fast mode defaults to Opus 5.5** ($8/$40 per Mtok); Opus 5 and Opus 4.8 remain supported at $10/$50.
+> **Fast Mode runs on Fable 5.2, Opus 5.5, Opus 5, and Opus 4.8 (v2.1.321)**: As of v2.1.219, `/fast` applies to **Opus 5 and Opus 4.8** — Opus 4.7 was removed from fast mode. Opus 5's fast mode is billed at $10/$50 per Mtok. Fast mode first moved to Opus 4.8 in v2.1.154 (about 2× the standard rate for ~2.5× the output speed), having flipped from Opus 4.6 to Opus 4.7 in v2.1.142. The `CLAUDE_CODE_OPUS_4_6_FAST_MODE_OVERRIDE` env var was **deprecated in v2.1.154 and removed on 2026-06-01**; fast mode is no longer available on Opus 4.6 — select Opus 5 or Opus 4.8 instead. **Since v2.1.280, fast mode defaults to Opus 5.5** ($8/$40 per Mtok); Opus 5 and Opus 4.8 remain supported at $10/$50 as a research preview (fast mode on Opus 5.5 is generally available). **Since v2.1.321, fast mode also runs on Fable 5.2** at $16/$80 per Mtok; on Fable 5.2 it stays on across sessions only if you turned it on with `/fast` while using Fable 5.2, and a `"fastMode": true` setting alone has no effect there. **Fast mode on Opus 4.8 is deprecated as of October 30, 2026 and will be removed on November 30, 2026** (v2.1.316); after that, fast mode requests on Opus 4.8 return an error instead of falling back to standard speed, so move to Opus 5.5 to keep the speedup. Fast mode and standard speed keep separate prompt caches: the first switch to fast mode re-reads the conversation uncached at fast-mode rates, and each later toggle, including the automatic fallback after a rate limit, re-reads what that speed hasn't cached, so turn it on at the start of a session.
+
+> **Fast mode on Google Cloud's Agent Platform (Vertex AI, v2.1.322)**: there fast mode works for Fable 5.2 only, in the `global`, `us`, or `eu` region (for example `export VERTEX_REGION_CLAUDE_FABLE_5_2=global`). `/fast` switches the session to Fable 5.2 without saving fast mode as your default, and `"fastMode": true` in settings has no effect; in a `-p` run pass `--model claude-fable-5-2 --settings '{"fastMode": true}'`. If Agent Platform refuses fast mode, Claude Code falls back to standard speed.
 
 ### Effort Levels (Opus 5 / Sonnet 5 / Opus 4.8 / Opus 4.7)
 
-Opus 5, Sonnet 5, Opus 4.8, and Opus 4.7 support adaptive reasoning with effort levels, ordered from lightest to heaviest: `low` (○), `medium` (◐), `high` (●), `xhigh`, and `max`. Opus 5.5, Sonnet 5.5, and Haiku 5.5 support all five levels too. The **default** is `medium` on Opus 5.5 (the default model since v2.1.280), Sonnet 5.5, and Haiku 5.5, `high` on Opus 5, Sonnet 5, Opus 4.8 (since v2.1.154), Opus 4.6, and Sonnet 4.6, and `xhigh` on Opus 4.7. `xhigh` is available on Opus 5.5, Sonnet 5.5, Haiku 5.5, Opus 5, Sonnet 5, Opus 4.8, and Opus 4.7; `max` works on Opus 5.5, Sonnet 5.5, Haiku 5.5, Opus 5, Sonnet 5, Opus 4.8/4.7/4.6 and Sonnet 4.6 (session-only). Haiku 4.5 has no effort levels. On Opus 4.6 / Sonnet 4.6, the default effort for Pro/Max subscribers was raised from `medium` to `high` in v2.1.117.
+The Fable models, Opus 5, Sonnet 5, Opus 4.8, and Opus 4.7 support adaptive reasoning with effort levels, ordered from lightest to heaviest: `low` (○), `medium` (◐), `high` (●), `xhigh`, and `max`. Opus 5.5, Sonnet 5.5, and Haiku 5.5 support all five levels too. The **default** is `medium` on Fable 5.2, Opus 5.5 (the default model since v2.1.280), Sonnet 5.5, and Haiku 5.5, `high` on Fable 5.1, Fable 5, Opus 5, Sonnet 5, Opus 4.8 (since v2.1.154), Opus 4.6, and Sonnet 4.6, and `xhigh` on Opus 4.7. `xhigh` is available on the Fable models, Opus 5.5, Sonnet 5.5, Haiku 5.5, Opus 5, Sonnet 5, Opus 4.8, and Opus 4.7; `max` works on the Fable models, Opus 5.5, Sonnet 5.5, Haiku 5.5, Opus 5, Sonnet 5, Opus 4.8/4.7/4.6 and Sonnet 4.6 (session-only). Haiku 4.5 has no effort levels. On Opus 4.6 / Sonnet 4.6, the default effort for Pro/Max subscribers was raised from `medium` to `high` in v2.1.117.
 
 ```bash
 # Set effort level via CLI flag
@@ -847,10 +864,10 @@ claude --effort high "complex review"
 /effort high
 
 # Set effort level via environment variable
-export CLAUDE_CODE_EFFORT_LEVEL=high   # low, medium, high, xhigh (Opus 5.5, Sonnet 5.5, Haiku 5.5, Opus 5, Sonnet 5, Opus 4.8/4.7), or max — default is high on Opus 5
+export CLAUDE_CODE_EFFORT_LEVEL=high   # low, medium, high, xhigh (Fable models, Opus 5.5, Sonnet 5.5, Haiku 5.5, Opus 5, Sonnet 5, Opus 4.8/4.7), or max — default is high on Opus 5
 ```
 
-The "ultrathink" keyword in prompts activates deep reasoning. The `/effort` slider also has an **Ultracode** toggle (Tab, or `/effort ultracode [on|off]`), which is **not** a model effort level — it has Claude orchestrate dynamic workflows at whichever effort level the session runs at. Since v2.1.284 it no longer forces `xhigh` and stays on when you change the level; `--effort ultracode` and the Agent SDK's `effortLevel: "ultracode"` still set `xhigh`.
+The "ultrathink" keyword in prompts activates deep reasoning; since v2.1.311, typed in the interactive terminal it also runs that turn at `xhigh` on Opus 5.5, Sonnet 5.5, Haiku 5.5, Fable 5.2 (v2.1.321+), and Fable 5.1 through Anthropic's API (rainbow-colored when it can; VS Code since v2.1.316), and `CLAUDE_CODE_DISABLE_ULTRATHINK=1` (v2.1.316) turns it off. The `/effort` slider also has an **Ultracode** toggle (Tab, or `/effort ultracode [on|off]`), which is **not** a model effort level — it has Claude orchestrate dynamic workflows at whichever effort level the session runs at. Since v2.1.284 it no longer forces `xhigh` and stays on when you change the level; `--effort ultracode` and the Agent SDK's `effortLevel: "ultracode"` still set `xhigh`.
 
 ---
 
@@ -866,17 +883,19 @@ The "ultrathink" keyword in prompts activates deep reasoning. The `/effort` slid
 | `ANTHROPIC_DEFAULT_SONNET_MODEL` | Override default Sonnet model ID |
 | `ANTHROPIC_DEFAULT_HAIKU_MODEL` | Override default Haiku model ID |
 | `MAX_THINKING_TOKENS` | Set extended thinking token budget |
-| `CLAUDE_CODE_EFFORT_LEVEL` | Set effort level (`low`/`medium`/`high`/`xhigh`/`max`) — default is `medium` on Opus 5.5, Sonnet 5.5, and Haiku 5.5, `high` on Opus 5, Sonnet 5, and Opus 4.8 (`xhigh` on Opus 4.7); `xhigh` needs Opus 5.5, Sonnet 5.5, Haiku 5.5, Opus 5, Sonnet 5, or Opus 4.8/4.7; `max` works on Opus 5.5, Sonnet 5.5, Haiku 5.5, Opus 5, Sonnet 5, Opus 4.8/4.7/4.6 and Sonnet 4.6 |
+| `CLAUDE_CODE_EFFORT_LEVEL` | Set effort level (`low`/`medium`/`high`/`xhigh`/`max`) — default is `medium` on Fable 5.2, Opus 5.5, Sonnet 5.5, and Haiku 5.5, `high` on Fable 5.1, Fable 5, Opus 5, Sonnet 5, and Opus 4.8 (`xhigh` on Opus 4.7); `xhigh` needs a Fable model, Opus 5.5, Sonnet 5.5, Haiku 5.5, Opus 5, Sonnet 5, or Opus 4.8/4.7; `max` works on Fable models, Opus 5.5, Sonnet 5.5, Haiku 5.5, Opus 5, Sonnet 5, Opus 4.8/4.7/4.6 and Sonnet 4.6; set `auto` or `unset` to send no effort level so the API's default applies. It outranks `--effort` and `/effort` |
 | `CLAUDE_CODE_SIMPLE` | Minimal mode, set by `--bare` flag |
 | `CLAUDE_CODE_SAFE_MODE` | Set to `1` to start with all customizations disabled (CLAUDE.md, plugins, skills, hooks, MCP) — env-var form of `--safe-mode`, for isolating config problems (v2.1.169) |
 | `CLAUDE_CODE_DISABLE_BUNDLED_SKILLS` | Set to `1` to hide the bundled skills, workflows, and commands from the model (v2.1.169) |
 | `CLAUDE_CODE_DISABLE_AUTO_MEMORY` | Set to `1` to disable auto memory (no auto memory files are created or loaded) |
 | `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS` | Disable background task execution |
-| `CLAUDE_CODE_DISABLE_CRON` | Disable scheduled/cron tasks |
+| `CLAUDE_CODE_DISABLE_CRON` | Disable session-scoped scheduled tasks (`/loop`, cron tools); cloud scheduled tasks are unaffected |
+| `CLAUDE_CODE_DISABLE_FEATURE_FLAGS` | Set to `1` to stop feature-flag fetching without turning off telemetry; every flag then uses its built-in default. With it set, Remote Control and the other features that need feature-flag fetching are unavailable. The older name `DISABLE_GROWTHBOOK` still works (v2.1.319) |
 | `CLAUDE_CODE_DISABLE_GIT_INSTRUCTIONS` | Disable git-related instructions |
 | `CLAUDE_CODE_DISABLE_TERMINAL_TITLE` | Disable terminal title updates |
 | `CLAUDE_CODE_DISABLE_1M_CONTEXT` | Disable 1M token context window |
 | `CLAUDE_CODE_DISABLE_MOUSE_CLICKS` | Disable mouse click/drag/hover in fullscreen mode; wheel scroll still works (v2.1.195+) |
+| `CLAUDE_CODE_DISABLE_NESTED_SESSION_ID` | Set to `1` on a self-hosted runner so a `claude -p` run inside a session uses that session's ID and transcript, as before v2.1.317 |
 | `CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK` | Disable non-streaming fallback |
 | `CLAUDE_CODE_ENABLE_TASKS` | Task tools are the default; set to `0` to revert to the legacy `TodoWrite` tool |
 | `CLAUDE_CODE_TASK_LIST_ID` | Named task directory shared across sessions |
@@ -887,11 +906,14 @@ The "ultrathink" keyword in prompts activates deep reasoning. The `/effort` slid
 | `CLAUDE_CODE_PLUGIN_SEED_DIR` | Directory for plugin seed files |
 | `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB` | Env vars to scrub from subprocesses |
 | `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` | Override auto-compaction percentage |
+| `CLAUDE_CODE_AUTO_COMPACT_WINDOW` | Auto-compact window, from `100000` to `1000000` tokens. Accepts `k`/`M` suffixes such as `200k` since v2.1.304 (earlier versions read `200k` as 200 and clamped to 100K) and warns on out-of-range values |
 | `CLAUDE_STREAM_IDLE_TIMEOUT_MS` | Stream idle timeout in milliseconds |
+| `API_TIMEOUT_MS` | Time each API request attempt has to receive its response headers (default 600000). `0` removes the limit since v2.1.305; a non-streaming attempt still stops after 300 s locally |
+| `CLAUDE_CODE_WARN_DISK_FREE_GIB` / `CLAUDE_CODE_WARN_MEMORY_FREE_GIB` | Whole GiB thresholds below which Claude is warned about free disk space on the working directory's filesystem / available memory (memory: Linux and WSL); launch environment only (v2.1.304) |
 | `SLASH_COMMAND_TOOL_CHAR_BUDGET` | Character budget for slash command tools |
 | `ENABLE_TOOL_SEARCH` | Enable tool search capability |
 | `MAX_MCP_OUTPUT_TOKENS` | Maximum tokens for MCP tool output |
-| `CLAUDE_CODE_PERFORCE_MODE` | Set to `1` to enable Perforce mode — treats files as read-only by default (for Perforce/P4 version control workflows) (added v2.1.98) |
+| `CLAUDE_CODE_PERFORCE_MODE` | Set to `1` to enable Perforce-aware write protection: Edit, Write, and NotebookEdit fail with a `p4 edit <file>` hint when the target file lacks the owner-write bit, which Perforce clears on synced files until `p4 edit` opens them (added v2.1.98). Since v2.1.323, a one-time start-up notice names this variable when Perforce settings are found and the mode is off |
 | `DISABLE_UPDATES` | Blocks all update paths including manual `claude update`. Stricter than `DISABLE_AUTOUPDATER`, which only blocks the background autoupdater (v2.1.118+) |
 | `CLAUDE_CODE_HIDE_CWD` | When set to `1`, hides the current working directory in the startup logo (privacy / screen-share use) (v2.1.119+) |
 | `CLAUDE_CODE_FORK_SUBAGENT` | Set to `0` to turn fork subagents off. Since v2.1.302 they are on by default in the terminal, `claude -p`, the Agent SDK, the desktop app and VS Code; before v2.1.302, set `1` to turn them on in `claude -p` and the Agent SDK. |
@@ -913,34 +935,45 @@ The "ultrathink" keyword in prompts activates deep reasoning. The `/effort` slid
 | `CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS` | Cap on subagents running concurrently. Default 20 (v2.1.217) |
 | `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` | Controls how deep nested subagent spawns can go. Since v2.1.219 the default is **3 layers** (was 1); set to `1` to disable nesting entirely |
 | `CLAUDE_CODE_MCP_AUTO_BACKGROUND_MS` | Threshold, in milliseconds, before a long-running MCP tool call auto-backgrounds. Default 120000 (2 minutes) (v2.1.212) |
-| `CLAUDE_AX_SCREEN_READER` | Set to `1` to enable plain-text screen reader rendering mode. Same effect as `--ax-screen-reader` or `"axScreenReader": true` in settings (v2.1.208) |
+| `CLAUDE_CODE_DISABLE_MCP_TASK_BACKGROUND` | Set to `1` so Claude waits for an MCP task's result in an interactive session; automatic backgrounding still applies after two minutes (v2.1.304) |
+| `CLAUDE_AX_SCREEN_READER` | Set to `1` to enable plain-text screen reader rendering mode, or `0` to force it off. Same effect as `--ax-screen-reader` or `"axScreenReader": true` in user or managed settings (v2.1.208). Since v2.1.305 the key, and this variable in a settings `env` block, are ignored in project and local settings |
 | `CLAUDE_CLIENT_PRESENCE_FILE` | Point at a marker file to suppress mobile push notifications while you're at the machine (v2.1.181+). Note: the name is `CLAUDE_CLIENT_PRESENCE_FILE`, not `CLAUDE_CODE_CLIENT_PRESENCE_FILE`. |
 | `CLAUDE_CODE_MAX_RETRIES` | Maximum number of API retry attempts. Capped at 15 as of v2.1.186. |
 | `CLAUDE_CODE_RETRY_WATCHDOG` | Retry control recommended for unattended sessions, as an alternative to raising `CLAUDE_CODE_MAX_RETRIES` (v2.1.186+). |
 | `CLAUDE_CODE_RETRY_WATCHDOG_MAX_WAIT_MS` | Maximum time in milliseconds that each API request spends waiting out `429` and `529` errors when `CLAUDE_CODE_RETRY_WATCHDOG` is set; once it's spent, the next such error ends the request. Positive whole number in plain digits (e.g. `1800000` for 30 minutes); unset means no limit (v2.1.295) |
 | `CLAUDE_CODE_RETRY_WATCHDOG_MAX_USAGE_LIMIT_WAIT_MS` | Longest usage-limit reset that unattended retry mode (`CLAUDE_CODE_RETRY_WATCHDOG`) waits for; a request at a limit that resets later ends instead of waiting (v2.1.301) |
+| `CLAUDE_CODE_RETRY_WATCHDOG_USAGE_LIMIT_RECHECK_MS` | Minimum interval between checks of whether a claude.ai usage limit was lifted early while `CLAUDE_CODE_RETRY_WATCHDOG` waits for its reset; plain digits from `60000` to `10800000`. Unset means no checks (v2.1.305) |
 | `CLAUDE_CODE_OVERLOADED_RETRY_BASE_DELAY_MS` | Starting delay in milliseconds, in place of the default 500, of the exponential backoff between automatic retries of a request rejected with a `529` overloaded error. Whole milliseconds from 500 to 32000 in plain digits; no effect when `CLAUDE_CODE_RETRY_WATCHDOG=1` or in fast mode (v2.1.292) |
 | `CLAUDE_ENABLE_STREAM_WATCHDOG` | Streaming idle watchdog (aborts/retries after 5 min with no stream events) is on by default for all providers; set to `0` to disable (v2.1.196). |
 | `CLAUDE_CODE_MCP_TOOL_IDLE_TIMEOUT` | Override the 5-minute idle abort for remote MCP tool calls that hang with no response (v2.1.187+). |
-| `CLAUDE_CODE_OPUS_4_6_FAST_MODE_OVERRIDE` | **Removed (no-op as of v2.1.160).** Previously pinned Fast Mode (`/fast`) to Opus 4.6. `/fast` applies to **Opus 5.5 (default since v2.1.280), Opus 5, and Opus 4.8** only — Opus 4.6 and Opus 4.7 are no longer fast-mode targets. |
+| `CLAUDE_CODE_OPUS_4_6_FAST_MODE_OVERRIDE` | **Removed (no-op as of v2.1.160).** Previously pinned Fast Mode (`/fast`) to Opus 4.6. `/fast` applies to **Fable 5.2 (v2.1.321+), Opus 5.5 (default since v2.1.280), Opus 5, and Opus 4.8** only (Opus 4.8 fast mode is deprecated and removed on November 30, 2026, v2.1.316) — Opus 4.6 and Opus 4.7 are no longer fast-mode targets. |
 | `CLAUDE_CODE_MCP_STARTUP_WAIT_MS` | Bounds how long the first non-interactive turn waits for MCP servers that are still connecting. Set `0` to not wait (v2.1.274), except that since v2.1.284 the first turn still waits up to 2 s for servers named by `--allowedTools` or an `mcp_tool` hook |
-| `MCP_PROTOCOL_NEGOTIATION` | On the v2 MCP client runtime only, whether Claude Code probes servers for MCP protocol revision 2026-07-28: `auto` probes HTTP, claude.ai connector, and stdio servers; `legacy` probes none. Any other value is ignored with a warning in the debug log (v2.1.221) |
+| `MCP_PROTOCOL_NEGOTIATION` | On the v2 MCP client runtime only, whether Claude Code probes servers for MCP protocol revision 2026-07-28: `auto` probes HTTP, claude.ai connector, and stdio servers; `legacy` probes none. Any other value is ignored with a warning in the debug log (v2.1.221). With it unset, Claude Code can skip asking a stdio server for 7 days, for example after the server exits when asked (v2.1.318); set `auto` to have an upgraded server asked sooner. |
 | `CLAUDE_CODE_DISABLE_WEB_FETCH` | Turns off the WebFetch tool (v2.1.285) |
 | `CLAUDE_CODE_NONSTREAMING_TIMEOUT_RETRIES` | Caps how many times a timed-out non-streaming fallback request is re-sent (v2.1.285) |
 | `CLAUDE_CODE_WEBFETCH_DEADLINE_MS` | Overrides WebFetch's 300-second deadline, introduced in v2.1.268. Set `0` to disable the deadline (v2.1.268) |
 | `CLAUDE_CODE_WORKFLOW_MAX_CONCURRENT_AGENTS` | Raises the Workflow tool's per-run concurrent agent limit. Accepts 1–256 (v2.1.269) |
 | `CLAUDE_CODE_AUTO_MODE_SERVER` | Set to `0` to use Claude Code's own auto-mode classifier requests instead of server-side review — on Bedrock, Vertex, Foundry, and gateways since v2.1.278, and on a direct Anthropic API connection since v2.1.281 (there the local classifier then counts toward usage, and `1` opts in) |
-| `CLAUDE_CODE_AUTO_MODE_MODEL` | Model the client-side auto mode classifier uses; does not change server-side auto mode's model (v2.1.302) |
-| `CLAUDE_CODE_DISABLE_DANGEROUS_RM_TIMEOUT` | Set to `1` to turn off the 2-minute timeout on the dangerous `rm` prompt in `--dangerously-skip-permissions` and auto mode, which otherwise denies the command with a rewrite hint so unattended sessions keep going (v2.1.281) |
+| `CLAUDE_CODE_AUTO_MODE_MODEL` | Full model ID, such as `claude-sonnet-4-6`, for the client-side auto mode classifier, which otherwise uses Sonnet 5; does not change server-side auto mode's model. Ignored for Opus 5, Sonnet 5.5, Opus 5.5 or a model your organization's policy excludes (v2.1.302). Since v2.1.323 it also works in managed settings for Claude Desktop sessions on third-party providers, taking effect once Claude Desktop includes that version |
+| `CLAUDE_CODE_DISABLE_DANGEROUS_RM_TIMEOUT` | Set to `1` in the launching environment to change the critical-path `rm` prompt: in `--dangerously-skip-permissions` (bypassPermissions) mode the terminal prompt has no time limit and the VS Code chat panel asks you; in auto mode the classifier decides instead, in the terminal, the VS Code panel, `-p` runs and Agent SDK sessions. Without it, the terminal prompt denies the command after 2 minutes with a rewrite hint so unattended sessions keep going (v2.1.281) |
+| `CLAUDE_CODE_DISABLE_MOUNTED_DRIVE_RM_PROMPT` | Set to `1` in the launching environment (ignored in a settings `env` block) to turn off the prompt for a recursive `rm` of a mounted drive path such as `/Volumes/USB` or WSL's `/mnt/c` (v2.1.304) |
+| `CLAUDE_CODE_DISABLE_ULTRAREVIEW_TRUST_CHECK` | Set to `1` in the launching environment so `claude ultrareview` doesn't exit with `Error: Workspace not trusted` in a folder it can't ask about, such as in CI; use only where every run starts in a folder you trust (v2.1.309) |
 | `CLAUDE_CODE_DISABLE_FILE_MENTIONS` | Set to `1` to stop expanding `@` mentions of files and directories; Claude gets the mentioned paths with a note to read them with its file tools. Ignored in project and local settings (v2.1.299) |
 | `CLAUDE_CODE_IDLE_COMPACT_MIN_TOKENS` | Context size, in tokens, at which idle compaction applies (default `200000`; values below `100000` are raised to `100000`). Turn idle compaction off with `"idleCompaction": false`, or turn it off from the `Idle compaction` row in `/config` (v2.1.302). Added in v2.1.299; requires v2.1.290+ |
 | `CLAUDE_CODE_GZIP_REQUEST_BODIES` | Set to `0` to turn off gzip compression of large API, telemetry, and artifact-publish request bodies sent to `api.anthropic.com`. Compression is skipped automatically behind a proxy, with a client certificate, or with `NODE_EXTRA_CA_CERTS`; use `0` if a TLS-inspecting proxy Claude Code can't detect mishandles compressed requests. Since v2.1.300 compression applies even when telemetry is disabled (v2.1.300) |
 | `CLAUDE_CODE_ARTIFACT_PUBLISH_EDITS` | Set to `0` to stop Claude from applying small changes to an artifact's file as part of publishing it; Claude then edits the file with its file tools and publishes as a separate step (v2.1.300) |
+| `CLAUDE_CODE_EVEN_MORE_DANGEROUSLY_SKIP_PERMISSIONS` | Set to `1` in the launching environment (ignored in a settings `env` block) to let critical-path `rm`/`rmdir` commands run with no prompt in `bypassPermissions` mode; no effect in plan mode, the VS Code panel, Desktop, or while a `PermissionRequest` hook or a Bash/Edit/Read ask or deny rule applies (v2.1.311) |
+| `CLAUDE_CODE_MODEL_CATALOG` | Set to `off` to stop Claude Code on Bedrock, Mantle, Vertex, and Foundry from loading model settings from a signed file on `downloads.claude.ai` (v2.1.311) |
+| `CLAUDE_CODE_DISABLE_ULTRATHINK` | Set to `1` to turn the `ultrathink` keyword off (v2.1.316) |
+| `CLAUDE_CODE_SUBAGENT_EFFORT` | Effort level subagents run at when nothing else names one, instead of inheriting the session's (v2.1.316). Since v2.1.317, a subagent on a different model from the main conversation uses that model's saved effort level or its default, instead of the session's effort level |
+| `CLAUDE_CODE_DISABLE_AGENT_PROGRESS_SUMMARIES` | Set to `1` to turn off subagent progress summaries and the requests that write them. Available since v2.1.318 and announced in the v2.1.323 changelog; the env-vars docs page doesn't list it yet |
+| `CLAUDE_CODE_RESUME_HINT_COMMAND` | A program that starts Claude Code can set it so the exit hint names that program's own resume command (v2.1.323; changelog-sourced, the env-vars docs page doesn't list it yet) |
 | `CLAUDE_CODE_ENABLE_TODO_TOOLS` | Set to `1` to restore the todo/task-tracking tools (`TaskCreate`/`Get`/`Update`/`List`, `TodoWrite`), which are available by default only on Claude 3.x models, Opus 4 through 4.7, Sonnet 4 through 4.6, and Haiku 4.5 (v2.1.268) |
 | `CLAUDE_CODE_WEBFETCH_CACHE_TTL_MS` | How long WebFetch caches a fetched URL. Default 15 minutes (v2.1.233) |
 | `CLAUDE_CODE_TOOL_MEMORY_LIMIT` | Linux only: opt in to a memory cgroup applied to Bash commands (v2.1.233) |
 | `ANTHROPIC_BEDROCK_REGION_PREFIX` | Prefer a specific Bedrock cross-region inference profile (v2.1.224) |
 | `CLAUDE_CODE_DISABLE_UNKNOWN_MODEL_WINDOW_ENFORCEMENT` | Set to `1` to restore pre-v2.1.223 auto-compact behavior on unrecognized model IDs (v2.1.223) |
+| `CLAUDE_CODE_MAX_CONTEXT_TOKENS` | Override the context window size, in tokens, that Claude Code assumes for the active model, such as `400000` for a gateway or custom model ID. For an ID it doesn't recognize and that has no `[1m]`, the value applies on its own; that includes IDs starting with `claude-`, such as a gateway's `claude-sonnet-latest`, since v2.1.324 per the model configuration docs (the changelog lists it in v2.1.325). For an unrecognized ID with `[1m]`, a value under 1M also needs `CLAUDE_CODE_DISABLE_1M_CONTEXT=1`; for an ID it recognizes, the value applies only with `DISABLE_COMPACT`, which turns off all compaction |
 | `CLAUDE_CODE_WORKFLOW_PREFIX_STAGGER_MS` | Set to `0` to disable prefix staggering on dynamic-workflow fan-out (v2.1.229) |
 | `CLAUDE_CODE_USER_DIALOG_TIMEOUT_MS` | Overrides the `dialogExpiry` setting (v2.1.224) |
 | `CLAUDE_CODE_PROJECT_DIR_NAME` | Overrides the per-project transcript directory name Claude Code derives from the project path (v2.1.234) |
@@ -951,7 +984,7 @@ The "ultrathink" keyword in prompts activates deep reasoning. The `/effort` slid
 
 > **`CLAUDE_CODE_DISABLE_1M_CONTEXT` widened in v2.1.223**: it now holds **every** Claude model with a native 1M-token window to 200K via auto-compaction, not just a fixed list of model IDs.
 
-> **`ENABLE_TOOL_SEARCH` on Vertex AI (v2.1.119+)**: Tool search is **disabled by default on Google Cloud Vertex AI** deployments. Users who want the tool-search capability on Vertex must explicitly opt in with `export ENABLE_TOOL_SEARCH=true`. On direct Anthropic API it remains enabled by default.
+> **`ENABLE_TOOL_SEARCH` on Agent Platform (Vertex AI) and gateways**: Before v2.1.221, tool search was off on Google Cloud's Agent Platform unless you set `ENABLE_TOOL_SEARCH=true`; it is now on there for Claude Opus 4.5, Sonnet 4.5, Haiku 4.5 and later models (earlier models load all MCP tools upfront, and `true` doesn't change that). Tool search is on by default, including behind a custom `ANTHROPIC_BASE_URL` gateway since v2.1.304 (since v2.1.305 a gateway that rejects it with a 400 or 422 is retried without it); set `ENABLE_TOOL_SEARCH=false` to load every tool upfront.
 
 > **OpenTelemetry variables in project settings (v2.1.282)**: project and local settings ignore OpenTelemetry variables that turn on export, set its endpoint, or capture content, such as `CLAUDE_CODE_ENABLE_TELEMETRY` and `OTEL_LOG_*`.
 
@@ -985,7 +1018,8 @@ These keys live in a `settings.json` file (`~/.claude/settings.json` for user sc
 | `syncClaudeAiSkills` / `syncClaudeAiPlugins` | (v2.1.275) Set either to `false` to opt out of syncing the skills or plugins you have enabled on your claude.ai account into terminal sessions. |
 | `attribution` | (v2.1.281) Set `"attribution": false` to hide all commit and PR attribution. Older CLI versions skip a settings file that holds it, so keep the object form in files shared across versions. |
 | `maxProseWidth` | (v2.1.282) Caps the width of Claude's prose in wide terminals; tables and code blocks keep the full width. |
-| `idleCompaction` | (v2.1.290) Compacts a long conversation you've stepped away from shortly before its prompt cache expires, so your next message sends a summary instead of the whole conversation. On by default in interactive sessions on the one-hour cache TTL once context reaches 200K tokens (`CLAUDE_CODE_IDLE_COMPACT_MIN_TOKENS`) and ~54 minutes have passed. Set `false` to turn it off, or turn it off from the `Idle compaction` row in `/config` (v2.1.302); `DISABLE_AUTO_COMPACT` also turns it off. |
+| `idleCompaction` | (v2.1.290) Compacts a long conversation you've stepped away from shortly before its prompt cache expires, so your next message sends a summary instead of the whole conversation. On by default in interactive terminal sessions on the one-hour cache TTL once context reaches 200K tokens (`CLAUDE_CODE_IDLE_COMPACT_MIN_TOKENS`) and about an hour has passed. Since v2.1.314 it also runs in the VS Code chat panel and the Desktop app's Code tab (local or SSH sessions), for subscribers with telemetry off, and on Bedrock, Vertex, Foundry, and LLM gateways once the one-hour prompt cache is on. Set `false` to turn it off, or turn it off from the `Idle compaction` row in `/config` (v2.1.302); `DISABLE_AUTO_COMPACT` also turns it off. |
+| `permissions.denyInsteadOfPrompting` | (v2.1.319) `true` denies a tool call that would otherwise wait on a permission prompt, and the turn continues; calls an allow rule, your permission mode or auto mode approves still run. User or managed settings, or `--settings` — a repository can't set it |
 
 ```json
 {
@@ -1078,6 +1112,7 @@ claude -p --output-format json "query"
 
 **Solutions:**
 - Check `--permission-mode` setting
+- Since v2.1.302, a `claude -p` or Agent SDK run with no permission mode set starts in Manual mode (config value `default`) and denies tool calls that need approval; pass `--permission-mode` (for example `auto` or `acceptEdits`) or `--allowedTools`.
 - Review `--allowedTools` and `--disallowedTools` flags
 - Use `--dangerously-skip-permissions` for automation (with caution)
 
@@ -1099,9 +1134,19 @@ claude -p --output-format json "query"
 
 ---
 
-**Last Updated**: October 18, 2026
-**Claude Code Version**: 2.1.302
+**Last Updated**: November 14, 2026
+**Claude Code Version**: 2.1.325
 **Sources**:
+- https://code.claude.com/docs/en/agent-sdk/agent-loop#turns-and-messages
+- https://code.claude.com/docs/en/permission-modes#time-limits-and-denials-in-auto-and-bypasspermissions-modes
+- https://code.claude.com/docs/en/changelog#2-1-316
+- https://code.claude.com/docs/en/model-config#use-ultrathink-for-one-off-deep-reasoning
+- https://code.claude.com/docs/en/model-config#adjust-effort-level
+- https://code.claude.com/docs/en/feature-availability#ultra-plan
+- https://code.claude.com/docs/en/troubleshoot-install#fix-an-npm-12-install
+- https://code.claude.com/docs/en/model-config#send-no-effort-level
+- https://code.claude.com/docs/en/changelog#2-1-311
+- https://code.claude.com/docs/en/changelog#2-1-314
 - https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md
 - https://code.claude.com/docs/en/workflows#set-a-size-guideline
 - https://code.claude.com/docs/en/tools-reference#task-tool-availability
@@ -1154,4 +1199,38 @@ claude -p --output-format json "query"
 - https://code.claude.com/docs/en/changelog#2-1-302
 - https://github.com/anthropics/claude-code
 - https://platform.claude.com/docs/en/about-claude/model-deprecations
-**Compatible Models**: Claude Fable 5, Claude Opus 5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 4.5
+- https://code.claude.com/docs/en/changelog#2-1-309
+- https://code.claude.com/docs/en/errors#workspace-not-trusted-when-running-claude-ultrareview
+- https://code.claude.com/docs/en/ultrareview#trust-the-folder-before-the-review-runs
+- https://code.claude.com/docs/en/env-vars#variables
+- https://code.claude.com/docs/en/ultrareview#run-ultrareview-non-interactively
+- https://code.claude.com/docs/en/settings-reference#axscreenreader
+- https://code.claude.com/docs/en/cli-reference#cli-flags
+- https://code.claude.com/docs/en/changelog#2-1-304
+- https://code.claude.com/docs/en/mcp#configure-tool-search
+- https://code.claude.com/docs/en/mcp#tool-search-through-a-gateway
+- https://code.claude.com/docs/en/permission-modes#default-classifier-model
+- https://code.claude.com/docs/en/permission-modes#which-mode-a-non-interactive-run-starts-in
+- https://code.claude.com/docs/en/prompt-caching#turning-on-fast-mode
+- https://code.claude.com/docs/en/changelog#2-1-307
+- https://code.claude.com/docs/en/scheduled-tasks
+- https://code.claude.com/docs/en/model-config#model-aliases
+- https://code.claude.com/docs/en/changelog#2-1-321
+- https://code.claude.com/docs/en/model-config#work-with-fable
+- https://code.claude.com/docs/en/model-config#version-history
+- https://code.claude.com/docs/en/model-config#effort-level-of-subagents-and-teammates
+- https://code.claude.com/docs/en/fast-mode#use-fast-mode-on-agent-platform
+- https://code.claude.com/docs/en/changelog#2-1-322
+- https://code.claude.com/docs/en/changelog#2-1-318
+- https://code.claude.com/docs/en/changelog#2-1-319
+- https://code.claude.com/docs/en/permissions#read-only-commands
+- https://code.claude.com/docs/en/agent-view#dispatch-defaults
+- https://code.claude.com/docs/en/mcp#mcp-client-runtimes
+- https://code.claude.com/docs/en/env-vars#features-that-need-feature-flag-fetching
+- https://code.claude.com/docs/en/settings-reference#permissions-denyinsteadofprompting
+- https://code.claude.com/docs/en/changelog#2-1-317
+- https://code.claude.com/docs/en/changelog#2-1-323
+- https://code.claude.com/docs/en/permissions#wildcard-patterns
+- https://code.claude.com/docs/en/changelog#2-1-325
+- https://code.claude.com/docs/en/model-config#which-ids-claude_code_max_context_tokens-applies-to
+**Compatible Models**: Claude Fable 5.2, Claude Fable 5.1, Claude Fable 5, Claude Opus 5.5, Claude Opus 5, Claude Sonnet 5.5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 5.5, Claude Haiku 4.5

@@ -7,7 +7,7 @@
   <img alt="Claude How To" src="../resources/logos/claude-howto-logo.svg">
 </picture>
 
-🌐 **Language / Мова:** [English](../README.md) | [Tiếng Việt](../vi/README.md) | [中文](../zh/README.md) | [Українська](README.md)
+🌐 **Language / Мова:** [English](../README.md) | [Tiếng Việt](../vi/README.md) | [中文](../zh/README.md) | [Українська](README.md) | [日本語](../ja/README.md) | [한국어](../ko/README.md) | [فارسی](../fa/README.md)
 
 # Опануй Claude Code за вихідні
 
@@ -178,7 +178,7 @@ cp -r 03-skills/code-review-specialist ~/.claude/skills/
 Так. Ліцензія MIT, безкоштовно назавжди. Використовуйте в особистих проєктах, на роботі, у команді — без обмежень, крім включення ліцензії.
 
 **Це підтримується?**
-Активно. Довідник синхронізується з кожним релізом Claude Code. Поточна версія: v2.1.112 (квітень 2026), сумісна з Claude Code 2.1+.
+Активно. Довідник синхронізується з кожним релізом Claude Code. Поточна версія: v2.1.316 (жовтень 2026), сумісна з Claude Code 2.1+.
 
 **Чим це відрізняється від офіційної документації?**
 Офіційна документація — це довідник функцій. Цей довідник — туторіал з діаграмами, готовими до продакшену шаблонами та прогресивним навчальним шляхом. Вони доповнюють одне одного — починайте тут для навчання, звертайтесь до офіційних документів коли потрібні деталі.
@@ -187,7 +187,7 @@ cp -r 03-skills/code-review-specialist ~/.claude/skills/
 11-13 годин для повного шляху. Але ви отримаєте цінність за 15 хвилин — просто скопіюйте шаблон слеш-команди та спробуйте.
 
 **Чи працює це з Claude Sonnet / Haiku / Opus?**
-Так. Усі шаблони працюють з Claude Fable 5, Claude Opus 5, Claude Sonnet 5.5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 4.5.
+Так. Усі шаблони працюють з Claude Fable 5.2, Claude Fable 5.1, Claude Fable 5, Claude Opus 5.5, Claude Opus 5, Claude Sonnet 5.5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 5.5, Claude Haiku 4.5.
 
 **Чи можна долучитися?**
 Звичайно. Див. [CONTRIBUTING.md](CONTRIBUTING.md) для настанов. Ми вітаємо нові приклади, виправлення, покращення документації та шаблони спільноти.
@@ -395,7 +395,7 @@ cp 04-subagents/*.md /path/to/project/.claude/agents/
 
 **Приклади**:
 - `github-mcp.json` — Інтеграція з GitHub
-- `database-mcp.json` — Запити до бази даних
+- `database-mcp.json` — Запити до бази даних (вкажіть у `DATABASE_URL` користувача з правом лише SELECT; див. [налаштування лише для читання](05-mcp/README.md#приклад-2-налаштування-database-mcp))
 - `filesystem-mcp.json` — Файлові операції
 - `multi-mcp.json` — Кілька MCP-серверів
 
@@ -511,7 +511,7 @@ claude --plugin-dir ./07-plugins/documentation
 - **Розширене мислення** — Глибоке міркування для складних проблем (перемикання через `Alt+T` / `Option+T`)
 - **Фонові завдання** — Тривалі операції без блокування
 - **Режими дозволів** — `default`, `acceptEdits`, `plan`, `dontAsk`, `bypassPermissions`
-- **Headless-режим** — Claude Code у CI/CD: `claude -p "Run tests and generate report"`
+- **Headless-режим** — Claude Code у CI/CD: `claude -p "Run tests and generate report" --permission-mode auto`
 - **Управління сесіями** — `/resume`, `/rename`, `/fork`, `claude -c`, `claude -r`
 - **Конфігурація** — Налаштування поведінки в `~/.claude/settings.json`
 
@@ -585,14 +585,14 @@ Claude:
 ### DevOps-розгортання
 
 ```markdown
-# Використовує: Плагіни + MCP + Хуки
+# Використовує: Плагіни + Субагенти + Хуки
 
-User: /deploy production
+User: /devops-automation:deploy production
 
 Claude:
 1. Запускає pre-deploy хук (валідація середовища)
 2. Делегує субагенту deployment-specialist
-3. Виконує розгортання через Kubernetes MCP
+3. Запускає скрипт розгортання (kubectl)
 4. Моніторить прогрес
 5. Запускає post-deploy хук (перевірки стану)
 6. Звітує про статус
@@ -659,8 +659,8 @@ Claude:
 
 ---
 
-**Останнє оновлення**: 18 жовтня 2026
-**Версія Claude Code**: 2.1.302
+**Останнє оновлення**: 12 листопада 2026
+**Версія Claude Code**: 2.1.322
 **Джерела**:
 - https://code.claude.com/docs/en/tools-reference#task-tool-availability
 - https://code.claude.com/docs/en/hooks
@@ -668,4 +668,8 @@ Claude:
 - https://code.claude.com/docs/en/mcp
 - https://code.claude.com/docs/en/plugins/install
 - https://code.claude.com/docs/en/checkpointing
-**Сумісні моделі**: Claude Fable 5, Claude Opus 5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 4.5
+- https://code.claude.com/docs/en/headless#auto-approve-tools
+- https://code.claude.com/docs/en/permission-modes#which-mode-a-non-interactive-run-starts-in
+- https://code.claude.com/docs/en/mcp#example-query-your-postgresql-database
+- https://code.claude.com/docs/en/model-config#work-with-fable
+**Сумісні моделі**: Claude Fable 5.2, Claude Fable 5.1, Claude Fable 5, Claude Opus 5.5, Claude Opus 5, Claude Sonnet 5.5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 5.5, Claude Haiku 4.5

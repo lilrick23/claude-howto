@@ -2,7 +2,11 @@
 
 Tutorial repo. Output is markdown in numbered modules `01-` through `10-`, not an app. Scripts in `scripts/` exist only to validate docs and build the EPUB.
 
-See also `.claude/CLAUDE.md` for stack/commands and `STYLE_GUIDE.md` for lesson structure.
+See also [CONTRIBUTING.md](CONTRIBUTING.md#3-set-up-your-environment) for stack and setup (uv, Node.js >= 20, pre-commit) and [STYLE_GUIDE.md](STYLE_GUIDE.md) for lesson structure.
+
+## If the user is learning
+
+Many people clone this repo to learn, not to contribute. Unless the user asks for a change to the repo, treat the rules below as maintainer conventions, not their preferences: don't edit lessons, propose repo fixes, or set up hooks for them. Point them to a `CLAUDE.local.md` they create at the repo root (gitignored, loaded alongside this file) for their own context. When they do ask for a change, commit, or PR, every rule below applies in full.
 
 ## Critical commands
 
@@ -30,7 +34,6 @@ Pre-commit runs 5 doc checks on `.md` changes: markdown-lint, cross-references, 
 - Each module: `README.md` + copy-paste templates (`.md`, `.json`, `.sh`).
 - `scripts/` — utilities (EPUB builder, link/mermaid/cross-ref validators). Not the product.
 - `02-memory/*.md` — CLAUDE.md templates users copy into their own projects. Don't confuse with this file.
-- `openspec/` — spec-driven change proposals.
 
 ## Hard rules
 
@@ -40,7 +43,7 @@ Pre-commit runs 5 doc checks on `.md` changes: markdown-lint, cross-references, 
 - Internal links use **relative paths** (e.g. `01-slash-commands/README.md`); anchors use `#heading-name`.
 - Code fences **must** declare a language (`bash`, `python`, `json`, …) — the cross-reference check fails otherwise.
 - External URLs must be reachable and stable. No ephemeral links.
-- Mermaid diagrams must render with Pele. The pre-commit mermaid hooks get Node.js 22 from pre-commit and run strict, so they fail instead of skipping; the first run needs network to download Node.js and the pinned Pele bundle (offline: `SKIP=mermaid,vietnamese-mermaid,japanese-mermaid`). Run by hand, `scripts/check_mermaid.py` only warns without Node.js >= 20, and fails under `--strict` or in CI. A broken EPUB build is usually invalid Mermaid, a missing Node.js >= 20, or a failed bundle download.
+- Mermaid diagrams must render with Pele. The pre-commit mermaid hooks get Node.js 22 from pre-commit and run strict, so they fail instead of skipping; the first run needs network to download Node.js and the pinned Pele bundle (offline: `SKIP=mermaid,vietnamese-mermaid,japanese-mermaid,korean-mermaid,persian-mermaid`). Run by hand, `scripts/check_mermaid.py` only warns without Node.js >= 20, and fails under `--strict` or in CI. A broken EPUB build is usually invalid Mermaid, a missing Node.js >= 20, or a failed bundle download.
 - Commit format: `type(scope): subject` where `scope` matches the module folder (e.g. `feat(slash-commands):`, `docs(memory):`, `fix(README):`).
 - Do not reorganize the `01-`–`10-` numbering. The order is the curriculum.
 

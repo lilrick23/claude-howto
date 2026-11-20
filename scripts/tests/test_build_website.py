@@ -16,7 +16,9 @@ from bs4 import BeautifulSoup
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+import check_cross_references
 from build_website import (
+    MERMAID_BLOCK_RE,
     BuildState,
     PageInfo,
     WebsiteConfig,
@@ -34,6 +36,11 @@ from build_website import (
     rewrite_links,
     source_to_site_url,
 )
+
+# Invisible characters, spelled as escapes so editors can't strip them silently.
+ZWNJ = "\u200c"  # zero-width non-joiner (Persian, kept in GitHub heading ids)
+ZWJ = "\u200d"  # zero-width joiner (stripped)
+HAMZA_ABOVE = "\u0654"  # Arabic hamza above (combining mark, kept)
 
 # =============================================================================
 # Fixtures
@@ -104,6 +111,37 @@ class TestHeadingToAnchor:
     def test_emoji_stripped(self) -> None:
         # The validator strips emoji; we mirror that exactly.
         assert heading_to_anchor("🔥 Trending") == "-trending"
+
+    def test_zero_width_non_joiner_preserved(self) -> None:
+        # Persian uses U+200C inside words; GitHub keeps it in heading ids.
+        assert (
+            heading_to_anchor(f"نام{ZWNJ}گذاری فایل و پوشه")
+            == f"نام{ZWNJ}گذاری-فایل-و-پوشه"
+        )
+
+    def test_combining_mark_preserved(self) -> None:
+        # U+0654 is a combining mark, not a \w character; GitHub keeps it.
+        assert (
+            heading_to_anchor(f"مجموعه{HAMZA_ABOVE} استاندارد ایموجی")
+            == f"مجموعه{HAMZA_ABOVE}-استاندارد-ایموجی"
+        )
+
+    @pytest.mark.parametrize(
+        "heading",
+        [
+            f"نام{ZWNJ}گذاری فایل و پوشه",
+            "[v2.1.245] — 2026-08-25",
+            f"A{ZWJ}B test",
+            "Hướng dẫn bắt đầu nhanh",
+            f"مجموعه{HAMZA_ABOVE} استاندارد ایموجی",
+            "cafe\u0301",
+            "हिन्दी",
+        ],
+    )
+    def test_matches_validator(self, heading: str) -> None:
+        assert heading_to_anchor(heading) == check_cross_references.heading_to_anchor(
+            heading
+        )
 
 
 # =============================================================================
@@ -260,6 +298,133 @@ class TestReplaceMermaidBlocks:
         md = "```mermaid\nA --> B<C>\n```\n"
         out = replace_mermaid_blocks(md)
         assert "&lt;C&gt;" in out
+
+    def test_replaces_fence_with_info_string_or_trailing_space(self) -> None:
+        md = "```mermaid \nflowchart LR\nA-->B\n```\n\n```mermaid title=x\nA --> B\n```\n"
+        out = replace_mermaid_blocks(md)
+        assert out.count('<pre class="mermaid">') == 2
+        assert "```mermaid" not in out
+
+    def test_ignores_inline_code_and_other_languages(self) -> None:
+        md = (
+            "| mermaid | Every ` ```mermaid ` block |\n\n"
+            "```mermaidjs\nA-->B\n```\n\n"
+            "```mermaid\nflowchart LR\nA-->B\n```\n"
+        )
+        out = replace_mermaid_blocks(md)
+        assert out.count('<pre class="mermaid">') == 1
+        assert "` ```mermaid `" in out
+        assert "```mermaidjs" in out
+
+    def test_replaces_fence_with_space_before_language(self) -> None:
+        md = "``` mermaid\nflowchart LR\nA-->B\n```\n"
+        out = replace_mermaid_blocks(md)
+        assert out.count('<pre class="mermaid">') == 1
+        assert "```" not in out
+
+    def test_ignores_hyphenated_language(self) -> None:
+        md = "```mermaid-foo\nA-->B\n```\n"
+        assert replace_mermaid_blocks(md) == md
+
+    def test_keeps_indentation_of_nested_fence(self) -> None:
+        md = (
+            "1. Step one\n\n"
+            "   ```mermaid\n"
+            "   flowchart LR\n"
+            "   A-->B\n"
+            "   ```\n\n"
+            "2. Step two\n"
+        )
+        out = replace_mermaid_blocks(md)
+        assert '\n\n   <pre class="mermaid">   flowchart LR\n' in out
+        assert "```" not in out
+
+    def test_nested_fence_renders_inside_list_item(self) -> None:
+        # Python-Markdown continues a list item at four spaces of indentation.
+        md = (
+            "- Step one\n\n"
+            "    ```mermaid\n"
+            "    flowchart LR\n"
+            "    A-->B\n"
+            "    ```\n\n"
+            "- Step two\n"
+        )
+        soup = BeautifulSoup(render_markdown(md), "html.parser")
+        diagram = soup.select_one("li pre.mermaid")
+        assert diagram is not None
+        assert "Step one" in diagram.find_parent("li").get_text()
+
+    # A blank line, inline Markdown and a Markdown escape (`\\`): Python-Markdown
+    # must not split the block or format its text, or Pele gets a wrong source.
+    TRICKY_DIAGRAM = (
+        "graph LR\nA[*x* _y_ `z`]-->|[l](u)|B\n\n" + 'C["back\\\\slash"]-->D\n'
+    )
+
+    def test_top_level_diagram_html_is_unchanged(self) -> None:
+        # Exact output of main's build_website.render_markdown for this input.
+        md = "# T\n\n```mermaid\n" + self.TRICKY_DIAGRAM + "```\n\nAfter.\n"
+        assert render_markdown(md) == (
+            '<h1 id="t">T</h1>\n<pre class="mermaid">graph LR\n'
+            "A[*x* _y_ `z`]--&gt;|[l](u)|B\n\n"
+            'C["back\\\\slash"]--&gt;D\n</pre>\n<p>After.</p>'
+        )
+
+    @pytest.mark.parametrize(
+        ("bullet", "indent", "in_list"),
+        [
+            ("", "", False),
+            ("1. Step one\n\n", "   ", False),
+            ("- Step one\n\n", "    ", True),
+            ("- Step one\n\n", "\t", True),
+        ],
+        ids=["top-level", "3-spaces", "4-spaces", "tab"],
+    )
+    def test_diagram_text_is_the_exact_fence_source(
+        self, bullet: str, indent: str, in_list: bool
+    ) -> None:
+        # The page script hands `pre.textContent` to Pele. BeautifulSoup's
+        # get_text() is that textContent: the numeric character references
+        # that protect the block from Python-Markdown decode back to the
+        # original characters, as they do in the browser.
+        fence = "```mermaid\n" + self.TRICKY_DIAGRAM + "```"
+        nested = "\n".join(
+            indent + line if line else line for line in fence.split("\n")
+        )
+        md = f"{bullet}{nested}\n\n- Step two\n"
+        match = MERMAID_BLOCK_RE.search(md)
+        assert match is not None
+
+        soup = BeautifulSoup(render_markdown(md), "html.parser")
+        diagrams = soup.select("pre.mermaid")
+        assert len(diagrams) == 1
+        assert diagrams[0].get_text() == match.group("code")
+        assert (diagrams[0].find_parent("li") is not None) is in_list
+        assert not soup.select("pre.mermaid em, pre.mermaid code, pre.mermaid a")
+
+    @pytest.mark.parametrize("indent", ["", "   "], ids=["top-level", "3-spaces"])
+    def test_below_four_columns_block_is_not_entity_encoded(self, indent: str) -> None:
+        # Below 4 columns the <pre> is raw HTML, so it stays exactly as on main.
+        # This matters where a fence sits inside a ````markdown sample, which
+        # shows the replacement text literally.
+        md = f"{indent}```mermaid\n{indent}A[x] --> B\n{indent}```\n"
+        assert replace_mermaid_blocks(md) == (
+            f'{indent}<pre class="mermaid">{indent}A[x] --&gt; B\n{indent}</pre>\n'
+        )
+
+    def test_nested_diagram_is_not_wrapped_in_a_paragraph(self) -> None:
+        md = (
+            "- Step one\n\n"
+            "    ```mermaid\n"
+            "    flowchart LR\n"
+            "    A-->B\n"
+            "    ```\n\n"
+            "- Step two\n"
+        )
+        html_content = render_markdown(md)
+        diagram = BeautifulSoup(html_content, "html.parser").select_one("pre.mermaid")
+        assert diagram is not None
+        assert diagram.parent.name == "li"
+        assert "<p><pre" not in html_content
 
 
 # =============================================================================

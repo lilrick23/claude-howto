@@ -12,8 +12,10 @@
 [![GitHub Stars](https://img.shields.io/github/stars/luongnv89/claude-howto?style=flat&color=gold)](https://github.com/luongnv89/claude-howto/stargazers)
 [![GitHub Forks](https://img.shields.io/github/forks/luongnv89/claude-howto?style=flat)](https://github.com/luongnv89/claude-howto/network/members)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-2.1.112-brightgreen)](CHANGELOG.md)
+[![Version: 2.1.300 (partial)](https://img.shields.io/badge/version-2.1.300%20%28partial%29-brightgreen)](CHANGELOG.md)
 [![Claude Code](https://img.shields.io/badge/Claude_Code-2.1+-purple)](https://code.claude.com)
+
+🌐 **Language / 语言:** [English](../README.md) | [Tiếng Việt](../vi/README.md) | [中文](README.md) | [Українська](../uk/README.md) | [日本語](../ja/README.md) | [한국어](../ko/README.md) | [فارسی](../fa/README.md)
 
 # 用一个周末掌握 Claude Code
 
@@ -100,7 +102,7 @@
 
 - **GitHub stars**，来自每天都在使用 Claude Code 的开发者
 - **Forks**，许多团队已将这份指南改造成自己的工作流版本
-- **持续维护中**，会与每次 Claude Code 发布保持同步（最新版本：v2.1.112，2026 年 4 月）
+- **持续维护中**，会与每次 Claude Code 发布保持同步（最新版本：v2.1.300，2026 年 10 月；部分同步：中文版为精简版，02-memory 和 05-mcp 自 2026 年 4 月首次翻译后尚未同步）
 - **社区驱动**，贡献者会分享他们在真实工作中的配置和经验
 
 [![Star History Chart](https://api.star-history.com/svg?repos=luongnv89/claude-howto&type=Date)](https://star-history.com/#luongnv89/claude-howto&Date)
@@ -197,7 +199,7 @@ cp -r 03-skills/code-review-specialist ~/.claude/skills/
 是的。MIT 许可证，永久免费。你可以将它用于个人项目、工作项目或团队中，唯一要求只是保留许可证声明。
 
 **它有人维护吗？**
-是的，而且持续维护。该指南会与每次 Claude Code 发布同步。当前版本是 v2.1.112（2026 年 4 月），兼容 Claude Code 2.1+。
+是的，而且持续维护。该指南会与每次 Claude Code 发布同步。当前版本是 v2.1.300（2026 年 10 月），兼容 Claude Code 2.1+。这是部分同步：中文版为精简版，02-memory 和 05-mcp 自 2026 年 4 月首次翻译后尚未同步。
 
 **它和官方文档有什么不同？**
 官方文档是功能参考手册；这份指南则是教程，包含图示、生产级模板和渐进式学习路径。两者是互补关系，建议先用本指南学习，再在需要具体细节时查官方文档。
@@ -206,7 +208,7 @@ cp -r 03-skills/code-review-specialist ~/.claude/skills/
 完整路径大约需要 11 到 13 小时。但你在 15 分钟内就能获得直接收益，只要复制一个 slash command 模板并试用即可。
 
 **我可以搭配 Claude Sonnet / Haiku / Opus 使用吗？**
-可以。所有模板都适用于 Claude Fable 5、Claude Opus 5、Claude Sonnet 5.5、Claude Sonnet 5、Claude Sonnet 4.6、Claude Opus 4.8、Claude Haiku 4.5。
+可以。所有模板都适用于 Claude Fable 5.2、Claude Fable 5.1、Claude Fable 5、Claude Opus 5.5、Claude Opus 5、Claude Sonnet 5.5、Claude Sonnet 5、Claude Sonnet 4.6、Claude Opus 4.8、Claude Haiku 5.5、Claude Haiku 4.5。
 
 **我可以参与贡献吗？**
 当然可以。请查看 [CONTRIBUTING.md](CONTRIBUTING.md) 了解贡献规范。我们欢迎新的示例、bug 修复、文档改进以及社区模板。
@@ -559,7 +561,7 @@ claude --plugin-dir ./07-plugins/documentation
 - **Extended Thinking**：用于复杂问题的深度推理（用 `Alt+T` / `Option+T` 切换）
 - **Background Tasks**：运行长时间操作且不阻塞当前会话
 - **Permission Modes**：`default`、`acceptEdits`、`plan`、`dontAsk`、`bypassPermissions`
-- **Headless Mode**：在 CI/CD 中运行 Claude Code：`claude -p "Run tests and generate report"`
+- **Headless Mode**：在 CI/CD 中运行 Claude Code：`claude -p "Run tests and generate report" --permission-mode auto`
 - **Session Management**：`/resume`、`/rename`、`/fork`、`claude -c`、`claude -r`
 - **Configuration**：在 `~/.claude/settings.json` 中自定义行为
 
@@ -633,14 +635,14 @@ Claude：
 ### DevOps 部署
 
 ```markdown
-# 使用：Plugins + MCP + Hooks
+# 使用：Plugins + Subagents + Hooks
 
-用户：/deploy production
+用户：/devops-automation:deploy production
 
 Claude：
 1. 运行部署前 hook（校验环境）
 2. 委派给 deployment-specialist subagent
-3. 通过 Kubernetes MCP 执行部署
+3. 运行部署脚本（kubectl）
 4. 监控进度
 5. 运行部署后 hook（健康检查）
 6. 报告状态
@@ -879,8 +881,8 @@ MIT 许可证，详见 [LICENSE](LICENSE)。你可以自由使用、修改和分
 
 ---
 
-**最后更新**：2026 年 10 月 18 日
-**Claude Code 版本**：2.1.302
+**最后更新**：2026 年 11 月 12 日
+**Claude Code 版本**：2.1.322
 **来源**：
 - https://code.claude.com/docs/en/tools-reference#task-tool-availability
 - https://code.claude.com/docs/en/hooks
@@ -888,4 +890,7 @@ MIT 许可证，详见 [LICENSE](LICENSE)。你可以自由使用、修改和分
 - https://code.claude.com/docs/en/mcp
 - https://code.claude.com/docs/en/plugins/install
 - https://code.claude.com/docs/en/checkpointing
-**兼容模型**：Claude Fable 5、Claude Opus 5、Claude Sonnet 5、Claude Sonnet 4.6、Claude Opus 4.8、Claude Haiku 4.5
+- https://code.claude.com/docs/en/headless#auto-approve-tools
+- https://code.claude.com/docs/en/permission-modes#which-mode-a-non-interactive-run-starts-in
+- https://code.claude.com/docs/en/model-config#work-with-fable
+**兼容模型**：Claude Fable 5.2、Claude Fable 5.1、Claude Fable 5、Claude Opus 5.5、Claude Opus 5、Claude Sonnet 5.5、Claude Sonnet 5、Claude Sonnet 4.6、Claude Opus 4.8、Claude Haiku 5.5、Claude Haiku 4.5

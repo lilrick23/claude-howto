@@ -213,6 +213,7 @@ The URL must use `https://`. This option requires Claude Code v2.1.64 or later.
 
 - **Startup auth notice (v2.1.193+)**: At startup, Claude Code surfaces a notice listing any MCP servers that still need authentication, so a server that needs a login isn't left silently non-working.
 - **`headersHelper` auto-refresh (v2.1.193+)**: If you supply custom auth via a `headersHelper`, the helper is re-invoked automatically when a server returns HTTP 401 or 403. Credentials refresh on the fly without a manual reconnect. See [Use dynamic headers for custom authentication](https://code.claude.com/docs/en/mcp).
+- **OAuth behind an authenticating proxy (v2.1.299+)**: pass the proxy's own header with `--header`, `headers`, or a `headersHelper`, keep `Authorization` out of those headers, and sign in with `claude mcp login <name>`. A configured `Authorization` header is used as the credential, with no fallback to OAuth.
 
 > **Warning** (v2.1.238): A `headersHelper` in a project `.mcp.json`, and inline MCP servers in project or `--add-dir` agent files, now require that folder's trust dialog to have been accepted — including under `claude -p`. Such helpers also run **without inherited credential environment variables**; user-, managed-, and claude.ai-scope helpers run from the Claude config directory instead. A project config that relied on inherited credentials or on running untrusted will stop working until you accept the trust dialog and supply credentials another way.
 
@@ -261,7 +262,7 @@ Type `/mcp` inside a session to list connected servers, trigger OAuth flows, and
 
 ## MCP Tool Search
 
-Tool search is on by default: MCP tools are deferred and discovered on demand, so their definitions don't fill the model context. Claude Code turns it off when `ANTHROPIC_BASE_URL` points to a non-first-party host, since most proxies don't forward the blocks it needs.
+Tool search is on by default: MCP tools are deferred and discovered on demand, so their definitions don't fill the model context. Since v2.1.304 it also stays on behind a custom `ANTHROPIC_BASE_URL` gateway, which must forward `defer_loading` tool fields and `tool_reference` blocks; from v2.1.305 Claude Code retries a request the gateway rejects with a 400 or 422 without tool search. Set `ENABLE_TOOL_SEARCH=false` to load every tool upfront and skip those rejected requests. Before v2.1.304, tool search was off behind a gateway unless `ENABLE_TOOL_SEARCH` was `true`, `auto`, or `auto:N`.
 
 | Setting | Value | Description |
 |---------|-------|-------------|
@@ -302,6 +303,8 @@ an individual tool by setting `"anthropic/alwaysLoad"` in that tool's
 `_meta` object, and the server-level `alwaysLoad` setting in your
 configuration can override it.
 
+Server authors: mark tools that are safe to call twice with the `idempotentHint` or `readOnlyHint` annotation in their `tools/list` entry. Since v2.1.307, Claude Code repeats a call that was pending when an HTTP or claude.ai connector connection closed only for those tools; other calls fail with `connection closed before the tool call was answered`.
+
 ## Dynamic Tool Updates
 
 Claude Code supports MCP `list_changed` notifications. When an MCP server dynamically adds, removes, or modifies its available tools, Claude Code receives the update and adjusts its tool list automatically -- no reconnection or restart required.
@@ -313,6 +316,8 @@ MCP Apps is the first official MCP extension, enabling MCP tool calls to return 
 ## MCP Elicitation
 
 MCP servers can request structured input from the user via interactive dialogs (v2.1.49+). This allows an MCP server to ask for additional information mid-workflow -- for example, prompting for a confirmation, selecting from a list of options, or filling in required fields -- adding interactivity to MCP server interactions.
+
+If a server built on Java MCP SDK 0.17.0 or older refuses to connect with "rejected Claude Code's elicitation capability", upgrade it to Java MCP SDK 0.17.1+ or add `"bareElicitationCapability": true` to its entry (stdio, `sse`, `http` and `ws`; v2.1.281+), which limits it to form-mode elicitation.
 
 ## Tool Description and Instruction Cap
 
@@ -434,9 +439,9 @@ claude mcp add-json events-server '{"type":"stdio","command":"npx","args":["@mod
 
 > **Note**: In JSON configs — `.mcp.json`, `~/.claude.json`, or `claude mcp add-json` — the `type` field accepts `streamable-http` as an alias for `http`. The MCP specification uses the name `streamable-http` for this transport, so configurations copied from a server's own documentation work unmodified.
 
-Since v2.1.238, `claude mcp list` and `claude mcp get` show disabled servers as `⊘ Disabled` without connecting to them for a health check.
+Since v2.1.238, `claude mcp list` and `claude mcp get` show disabled servers as `⊘ Disabled` without connecting to them for a health check. A server one of your organization's policies refuses shows as `✘ Blocked by enterprise managed policy` in both commands; one filtered out by an allowlist, denylist, or other managed MCP restriction is hidden rather than listed.
 
-`claude mcp login <name>` / `claude mcp logout <name>` are the non-interactive equivalent of the OAuth flow in the `/mcp` menu — authenticate or sign out without opening it. Add `--no-browser` to `login` to complete OAuth over SSH or in a headless session (it redirects the flow through stdin).
+`claude mcp login <name>` / `claude mcp logout <name>` are the non-interactive equivalent of the OAuth flow in the `/mcp` menu — authenticate or sign out without opening it. Add `--no-browser` to `login` to complete OAuth over SSH or in a headless session (it redirects the flow through stdin). `claude mcp remove` deletes the stored OAuth tokens but doesn't revoke them; to revoke them where the authorization server supports it, run `claude mcp logout <name>` before `claude mcp remove <name>`.
 
 ## Available MCP Servers Table
 
@@ -546,7 +551,7 @@ MCP configurations support environment variable expansion with fallback defaults
 
 Variables are expanded at runtime:
 - `${VAR}` - Uses environment variable; if it is unset (and has no default), the server still loads with the literal `${VAR}`, and `claude mcp list` and `/mcp` warn about the missing variable
-- `${VAR:-default}` - Uses environment variable, falls back to default if not set
+- `${VAR:-default}` - Uses environment variable, falls back to default if not set. A variable set to an empty string counts as set and expands to empty (e.g. `url` becomes `/mcp`); unset it to get the default
 
 ### Example 2: Database MCP Setup
 
@@ -824,6 +829,8 @@ For enterprise deployments, IT administrators enforce MCP server policy through 
 
 Any user on the machine can read this file, so never put credentials in an `env` block. Use `${VAR}` expansion, OAuth, or `headersHelper` instead.
 
+> **Note (v2.1.305):** Servers in `managed-mcp.json` need no `allowedMcpServers` entry. The allowlist checks a managed server only when it uses `${VAR}` expansion outside `env`; before v2.1.305 it also checked servers that used `${VAR}` only in `env`. If you relied on `allowedMcpServers` to keep such a server off, it now loads on upgrade with no prompt; add a `deniedMcpServers` entry for it instead.
+
 **Filtering: allowlists and denylists**
 
 `allowedMcpServers`, `deniedMcpServers`, and `allowAllClaudeAiMcps` are **settings keys, not fields of `managed-mcp.json`**. Put them in a managed settings source — server-managed settings, `managed-settings.json`, an MDM profile, or the registry — for them to be enforceable:
@@ -927,6 +934,12 @@ MCP tool calls that run longer than 2 minutes now move to the background automat
 # Change the auto-background threshold to 5 minutes (300,000ms)
 export CLAUDE_CODE_MCP_AUTO_BACKGROUND_MS=300000
 ```
+
+Set it to `0` to turn automatic backgrounding off; `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1` turns it off together with background commands and background subagents. To cap how long a call may run, add a per-server `timeout` in milliseconds (a hard wall-clock limit) or set `MCP_TOOL_TIMEOUT` across servers (default about 28 hours).
+
+### MCP Tasks (public beta, v2.1.304+)
+
+A server that supports the MCP tasks extension can run a long job itself: Claude's tool call returns as soon as the server accepts the job, the footer shows a count such as `1 MCP task`, and Claude gets the result when the job ends. Stop one in `/tasks` with `x`. A task on a remote server keeps running after you exit; resume the same session to follow it again. Tasks need protocol revision 2026-07-28, feature-flag fetching (so not Bedrock, Vertex, Foundry or telemetry off) and a terminal CLI, Agent SDK or GitHub Actions session. A non-interactive run gets them only from the Agent SDK or `claude -p --input-format stream-json`, and either needs `CLAUDE_AUTO_BACKGROUND_TASKS=1` (a plain `claude -p "<prompt>"` doesn't get them). VS Code and the desktop app don't get them, and calls from subagents never become tasks. To make Claude wait for a task's result, set `CLAUDE_CODE_DISABLE_MCP_TASK_BACKGROUND=1` (or `CLAUDE_CODE_MCP_AUTO_BACKGROUND_MS=0` to wait for every MCP call).
 
 ## Solving Context Bloat with Code Execution
 
@@ -1314,7 +1327,7 @@ export GITHUB_PERSONAL_ACCESS_TOKEN="your_token"
 - Check network connectivity: `ping api.github.com`
 - Verify API endpoint is accessible
 - Check rate limits on API
-- Try increasing timeout in config
+- Raise the server's `timeout` (milliseconds) in its config entry, or `MCP_TOOL_TIMEOUT` for all servers
 - Check for firewall or proxy issues
 
 ### MCP Server Crashes
@@ -1352,8 +1365,8 @@ export GITHUB_PERSONAL_ACCESS_TOKEN="your_token"
 
 ---
 
-**Last Updated**: October 18, 2026
-**Claude Code Version**: 2.1.302
+**Last Updated**: November 1, 2026
+**Claude Code Version**: 2.1.316
 **Sources**:
 - https://code.claude.com/docs/en/mcp
 - https://code.claude.com/docs/en/managed-mcp
@@ -1369,4 +1382,21 @@ export GITHUB_PERSONAL_ACCESS_TOKEN="your_token"
 - https://code.claude.com/docs/en/mcp#tool-search-for-mcp-server-authors
 - https://code.claude.com/docs/en/mcp#environment-variable-expansion-in-mcp-json
 - https://code.claude.com/docs/en/sub-agents
-**Compatible Models**: Claude Fable 5, Claude Opus 5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 4.5
+- https://code.claude.com/docs/en/changelog#2-1-304
+- https://code.claude.com/docs/en/changelog#2-1-305
+- https://code.claude.com/docs/en/mcp#tool-search-through-an-llm-gateway
+- https://code.claude.com/docs/en/managed-mcp#how-allowlists-and-denylists-apply-to-the-managed-set
+- https://code.claude.com/docs/en/mcp#mcp-tasks-that-run-on-the-server
+- https://code.claude.com/docs/en/mcp#what-a-call-needs-to-become-an-mcp-task
+- https://code.claude.com/docs/en/mcp#make-claude-wait-for-the-result-of-an-mcp-task
+- https://code.claude.com/docs/en/mcp#automatic-backgrounding-of-long-tool-calls
+- https://code.claude.com/docs/en/mcp#time-limits-on-mcp-tool-calls
+- https://code.claude.com/docs/en/changelog#2-1-307
+- https://code.claude.com/docs/en/mcp#mark-tools-that-are-safe-to-call-twice
+- https://code.claude.com/docs/en/mcp#variables-set-to-an-empty-string
+- https://code.claude.com/docs/en/mcp#managing-your-servers
+- https://code.claude.com/docs/en/mcp#server-status
+- https://code.claude.com/docs/en/errors#mcp-server-rejected-the-elicitation-capability
+- https://code.claude.com/docs/en/mcp#elicitation-modes-claude-code-declares
+- https://code.claude.com/docs/en/mcp#use-oauth-with-a-server-behind-an-authenticating-proxy
+**Compatible Models**: Claude Fable 5.2, Claude Fable 5.1, Claude Fable 5, Claude Opus 5.5, Claude Opus 5, Claude Sonnet 5.5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 5.5, Claude Haiku 4.5

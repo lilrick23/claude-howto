@@ -80,7 +80,7 @@
 | `/subtask` | 派生一个继承当前对话的 forked subagent，完成后把结果返回给本对话（v2.1.212+） | 委派支线任务而不打断当前思路 |
 | `/stats` | 显示会话统计 | 查看会话指标 |
 | `/statusline` | 配置状态栏 | 自定义状态显示 |
-| `/stickers` | 订购 Claude Code 贴纸 | 趣味奖励 |
+| `/stickers` | 查看 Claude Code 贴纸是否可获取 | 趣味奖励 |
 | `/fast` | 切换快速输出模式 | 加快响应 |
 | `/terminal-setup` | 配置终端集成 | 设置终端特性 |
 | `/upgrade` | 打开升级页面以切换到更高套餐 | 套餐升级 |
@@ -235,9 +235,9 @@ cp -r 03-skills/* ~/.claude/skills/
 | `/claude-api` | 使用 Claude API 构建应用 | API 开发 |
 | `/code-review` | 按指定强度审查当前 diff 的正确性问题（例如 `/code-review high`）；加 `--comment` 可把结论发成 PR 行内评论。自 v2.1.218 起以**后台 subagent** 运行 | 写完代码后、合并 PR 前 |
 | `/fewer-permission-prompts` | 扫描历史记录并给出按优先级排序的允许列表建议 | 减少重复的权限提示 |
-| `/run` *(v2.1.145+)* | 启动当前项目的应用，直观看到改动效果 | 在真实应用里验证改动 |
-| `/run-skill-generator` *(v2.1.145+)* | 教会 `/run`、`/verify` 如何处理某个具体项目 | 首次为项目配置 `/run` |
-| `/verify` *(v2.1.145+)* | 构建、运行并观察应用，确认修复真的生效 | 端到端验证修复 |
+| `/run` | 启动当前项目的应用，直观看到改动效果 | 在真实应用里验证改动 |
+| `/run-skill-generator` | 教会 `/run`、`/verify` 如何处理某个具体项目 | 首次为项目配置 `/run` |
+| `/verify` | 构建、运行并观察应用，确认修复真的生效 | 端到端验证修复 |
 
 ---
 
@@ -250,8 +250,8 @@ cp -r 03-skills/* ~/.claude/skills/
 | Plugin | 说明 | 组件 | 适用场景 | 作用域 | 安装 |
 |--------|-------------|------------|-------------|-------|--------------|
 | `pr-review` | PR 审查工作流 | 3 个 commands、3 个 agents、GitHub MCP | 代码审查 | 项目 | `claude --plugin-dir ./07-plugins/pr-review` |
-| `devops-automation` | 部署与监控 | 4 个 commands、3 个 agents、K8s MCP | DevOps 任务 | 项目 | `/plugin install devops-automation` |
-| `documentation` | 文档生成套件 | 4 个 commands、3 个 agents、模板 | 文档编写 | 项目 | `/plugin install documentation` |
+| `devops-automation` | 部署与监控 | 4 个 commands、3 个 agents、2 个 hooks | DevOps 任务 | 项目 | `claude --plugin-dir ./07-plugins/devops-automation` |
+| `documentation` | 文档生成套件 | 4 个 commands、3 个 agents、GitHub MCP、模板 | 文档编写 | 项目 | `claude --plugin-dir ./07-plugins/documentation` |
 
 > **作用域**: `Project` = 团队共享，`User` = 个人工作流
 
@@ -431,7 +431,7 @@ mkdir -p ~/.claude/hooks && cp 06-hooks/*.sh ~/.claude/hooks/ && chmod +x ~/.cla
 | **Project Rules** | `.claude/rules/` | Project（团队） | 模块化项目规则 |
 | **User** | `~/.claude/CLAUDE.md` | User（个人） | 个人偏好 |
 | **User Rules** | `~/.claude/rules/` | User（个人） | 模块化个人规则 |
-| **Local** | `./CLAUDE.local.md` | Local（git 忽略） | 机器特定覆盖（截至 2026 年 3 月不在官方文档中，可能是历史遗留） |
+| **Local** | `./CLAUDE.local.md` | Local（git 忽略） | 个人的项目专属偏好，与 `CLAUDE.md` 一起加载；官方支持（[官方文档](https://code.claude.com/docs/en/memory)），需加入 `.gitignore` |
 | **Auto Memory** | 自动 | Session | 自动捕捉的洞察和修正 |
 
 > **作用域**: `Organization` = 管理员管理，`Project` = 通过 git 与团队共享，`User` = 个人偏好，`Local` = 不提交，`Session` = 自动管理
@@ -519,9 +519,8 @@ chmod +x ~/.claude/hooks/*.sh
 export GITHUB_TOKEN="your_token"
 claude mcp add github -- npx -y @modelcontextprotocol/server-github
 
-# 使用 Plugins
-claude --plugin-dir ./07-plugins/pr-review
-/plugin install devops-automation
+# 为单个会话加载 Plugins
+claude --plugin-dir ./07-plugins/pr-review --plugin-dir ./07-plugins/devops-automation
 ```
 
 ---

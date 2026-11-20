@@ -12,10 +12,10 @@
 [![GitHub Stars](https://img.shields.io/github/stars/luongnv89/claude-howto?style=flat&color=gold)](https://github.com/luongnv89/claude-howto/stargazers)
 [![GitHub Forks](https://img.shields.io/github/forks/luongnv89/claude-howto?style=flat)](https://github.com/luongnv89/claude-howto/network/members)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-2.1.302-brightgreen)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.1.325-brightgreen)](CHANGELOG.md)
 [![Claude Code](https://img.shields.io/badge/Claude_Code-2.1+-purple)](https://code.claude.com)
 
-🌐 **Language / Ngôn ngữ / 语言 / Мова:** [English](README.md) | [Tiếng Việt](vi/README.md) | [中文](zh/README.md) | [Українська](uk/README.md) | [日本語](ja/README.md)
+🌐 **Language / Ngôn ngữ / 语言 / Мова / 언어:** [English](README.md) | [Tiếng Việt](vi/README.md) | [中文](zh/README.md) | [Українська](uk/README.md) | [日本語](ja/README.md) | [한국어](ko/README.md) | [فارسی](fa/README.md)
 
 # Master Claude Code in a Weekend
 
@@ -102,7 +102,7 @@ Run `/lesson-quiz [topic]` after each module. The quiz pinpoints what you missed
 
 - **GitHub stars** from developers who use Claude Code daily
 - **Forks** from teams adapting this guide for their own workflows
-- **Actively maintained** — synced with every Claude Code release (latest: v2.1.302, October 2026)
+- **Actively maintained** — synced with every Claude Code release (latest: v2.1.325, November 2026)
 - **Community-driven** — contributions from developers who share their real-world configurations
 
 [![Star History Chart](https://api.star-history.com/svg?repos=luongnv89/claude-howto&type=Date)](https://star-history.com/#luongnv89/claude-howto&Date)
@@ -140,7 +140,7 @@ Take the self-assessment or pick your level:
 
 ## Get Started in 15 Minutes
 
-> **Installation note**: Starting in v2.1.113, Claude Code ships as a native per-platform binary (macOS/Linux/Windows). The recommended install is the native installer (`curl -fsSL https://claude.ai/install.sh | bash`); npm installation is deprecated in the official README; prefer the native installer, Homebrew (`brew install --cask claude-code`) or WinGet (`winget install Anthropic.ClaudeCode`). For reference, `npm install -g @anthropic-ai/claude-code` pulls the same native binary through a per-platform optional dependency at install time. As of v2.1.116, downloads come from `https://downloads.claude.ai/claude-code-releases` — corporate proxies must allowlist this host.
+> **Installation note**: Starting in v2.1.113, Claude Code ships as a native per-platform binary (macOS/Linux/Windows). The recommended install is the native installer (`curl -fsSL https://claude.ai/install.sh | bash`); npm installation is deprecated in the official README; prefer the native installer, Homebrew (`brew install --cask claude-code`) or WinGet (`winget install Anthropic.ClaudeCode`). For reference, `npm install -g @anthropic-ai/claude-code` pulls the same native binary through a per-platform optional dependency at install time. On npm 12, which skips Claude Code's postinstall step by default, that install ends with `Error: claude native binary not installed.` — switch to the native installer or follow [Fix an npm 12 install](https://code.claude.com/docs/en/troubleshoot-install#fix-an-npm-12-install). As of v2.1.116, downloads come from `https://downloads.claude.ai/claude-code-releases` — corporate proxies must allowlist this host.
 
 ```bash
 # 1. Clone the guide
@@ -201,7 +201,7 @@ cp -r 03-skills/code-review-specialist ~/.claude/skills/
 Yes. MIT licensed, free forever. Use it in personal projects, at work, in your team — no restrictions beyond including the license notice.
 
 **Is this maintained?**
-Actively. The guide is synced with every Claude Code release. Current version: v2.1.302 (October 2026), compatible with Claude Code 2.1+.
+Actively. The guide is synced with every Claude Code release. Current version: v2.1.325 (November 2026), compatible with Claude Code 2.1+.
 
 **How is this different from the official docs?**
 The official docs are a feature reference. This guide is a tutorial with diagrams, production-ready templates, and a progressive learning path. They complement each other — start here to learn, reference the docs when you need specifics.
@@ -210,7 +210,7 @@ The official docs are a feature reference. This guide is a tutorial with diagram
 11-13 hours for the full path. But you'll get immediate value in 15 minutes — just copy a slash command template and try it.
 
 **Can I use this with Claude Sonnet / Haiku / Opus?**
-Yes. All templates work with Claude Fable 5.1, Claude Fable 5, Claude Opus 5.5, Claude Opus 5, Claude Sonnet 5.5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 5.5, and Claude Haiku 4.5.
+Yes. All templates work with Claude Fable 5.2, Claude Fable 5.1, Claude Fable 5, Claude Opus 5.5, Claude Opus 5, Claude Sonnet 5.5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 5.5, and Claude Haiku 4.5.
 
 **Can I contribute?**
 Absolutely. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines. We welcome new examples, bug fixes, documentation improvements, and community templates.
@@ -421,7 +421,7 @@ cp 04-subagents/*.md /path/to/project/.claude/agents/
 
 **Examples**:
 - `github-mcp.json` - GitHub integration
-- `database-mcp.json` - Database queries
+- `database-mcp.json` - Database queries (point `DATABASE_URL` at a SELECT-only user; see [read-only setup](05-mcp/README.md#example-2-database-mcp-setup))
 - `filesystem-mcp.json` - File operations
 - `multi-mcp.json` - Multiple MCP servers
 
@@ -563,7 +563,7 @@ claude --plugin-dir ./07-plugins/documentation
 - **Extended Thinking** — Deep reasoning for complex problems (toggle with `Alt+T` / `Option+T`)
 - **Background Tasks** — Run long operations without blocking
 - **Permission Modes** — `manual` (config value `default`), `acceptEdits`, `plan`, `auto`, `dontAsk`, `bypassPermissions`
-- **Headless Mode** — Run Claude Code in CI/CD: `claude -p "Run tests and generate report"`
+- **Headless Mode** — Run Claude Code in CI/CD: `claude -p "Run tests and generate report" --permission-mode auto`
 - **Session Management** — `/resume`, `/rename`, `/fork`, `/branch`, `claude -c`, `claude -r`
 - **Configuration** — Customize behavior in `~/.claude/settings.json`
 
@@ -637,14 +637,14 @@ Claude:
 ### DevOps Deployment
 
 ```markdown
-# Uses: Plugins + MCP + Hooks
+# Uses: Plugins + Subagents + Hooks
 
-User: /deploy production
+User: /devops-automation:deploy production
 
 Claude:
 1. Runs pre-deploy hook (validates environment)
 2. Delegates to deployment-specialist subagent
-3. Executes deployment via Kubernetes MCP
+3. Runs the deploy script (kubectl)
 4. Monitors progress
 5. Runs post-deploy hook (health checks)
 6. Reports status
@@ -874,8 +874,8 @@ MIT License - see [LICENSE](LICENSE). Free to use, modify, and distribute. The o
 
 ---
 
-**Last Updated**: October 18, 2026
-**Claude Code Version**: 2.1.302
+**Last Updated**: November 14, 2026
+**Claude Code Version**: 2.1.325
 **Sources**:
 - https://code.claude.com/docs/en/tools-reference#task-tool-availability
 - https://code.claude.com/docs/en/hooks
@@ -894,4 +894,13 @@ MIT License - see [LICENSE](LICENSE). Free to use, modify, and distribute. The o
 - https://code.claude.com/docs/en/checkpointing
 - https://github.com/anthropics/claude-code
 - https://code.claude.com/docs/en/changelog#2-1-302
-**Compatible Models**: Claude Fable 5.1, Claude Fable 5, Claude Opus 5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 4.5
+- https://code.claude.com/docs/en/changelog#2-1-310
+- https://code.claude.com/docs/en/headless#auto-approve-tools
+- https://code.claude.com/docs/en/permission-modes#which-mode-a-non-interactive-run-starts-in
+- https://code.claude.com/docs/en/mcp#example-query-your-postgresql-database
+- https://code.claude.com/docs/en/troubleshoot-install#fix-an-npm-12-install
+- https://code.claude.com/docs/en/model-config#work-with-fable
+- https://www.npmjs.com/package/@anthropic-ai/claude-code
+- https://code.claude.com/docs/en/changelog#2-1-323
+- https://code.claude.com/docs/en/changelog#2-1-325
+**Compatible Models**: Claude Fable 5.2, Claude Fable 5.1, Claude Fable 5, Claude Opus 5.5, Claude Opus 5, Claude Sonnet 5.5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 5.5, Claude Haiku 4.5

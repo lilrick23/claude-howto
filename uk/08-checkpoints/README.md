@@ -241,8 +241,8 @@ Claude Code зберігає знімки для **100 найновіших ко
 
 Контрольні точки мають такі обмеження:
 
-- **Bash-команди НЕ відстежуються** — Операції `rm`, `mv`, `cp` у файловій системі не фіксуються
-- **Зовнішні зміни НЕ відстежуються** — Зміни, зроблені поза Claude Code (у редакторі, терміналі тощо), не фіксуються
+- **Файли, змінені лише Bash-командами, НЕ відстежуються** — Якщо Claude уже відредагував файл своїми інструментами редагування файлів, `/rewind` також скасовує зміни, які Bash-команди вносять у цей файл згодом; файл, який змінювали лише Bash-команди, не відстежується. Починаючи з v2.1.309, `sed -i` обробляється як будь-яке інше редагування через Bash
+- **Зовнішні зміни НЕ відстежуються** — Зміни, зроблені поза Claude Code (у редакторі, терміналі, іншій сесії тощо), зазвичай не фіксуються, якщо тільки вони не зачіпають файли, які Claude редагував у цій сесії, — тоді відновлення коду може їх перезаписати (попередження /rewind повідомляє про це з v2.1.311)
 - **Не заміна системі контролю версій** — Використовуйте git для постійних, аудитованих змін
 
 ## Усунення неполадок
@@ -336,9 +336,13 @@ Claude Code зберігає знімки для **100 найновіших ко
 
 ---
 
-**Останнє оновлення**: 18 жовтня 2026
-**Версія Claude Code**: 2.1.302
+**Останнє оновлення**: 1 листопада 2026
+**Версія Claude Code**: 2.1.316
 **Джерела**:
 - https://code.claude.com/docs/en/checkpointing
 - https://code.claude.com/docs/en/commands
-**Сумісні моделі**: Claude Sonnet 4.6, Claude Opus 4.6, Claude Haiku 4.5
+- https://code.claude.com/docs/en/changelog#2-1-309
+- https://code.claude.com/docs/en/checkpointing#bash-command-changes-not-tracked
+- https://code.claude.com/docs/en/checkpointing#external-changes-not-tracked
+- https://code.claude.com/docs/en/changelog#2-1-311
+**Сумісні моделі**: Claude Fable 5.2, Claude Fable 5.1, Claude Fable 5, Claude Opus 5.5, Claude Opus 5, Claude Sonnet 5.5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 5.5, Claude Haiku 4.5

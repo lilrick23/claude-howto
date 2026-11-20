@@ -232,7 +232,7 @@ Các script tự động hóa dựa trên sự kiện thực thi tự động.
 
 Các bộ sưu tập tính năng được đóng gói.
 
-### PR Review Plugin (10 files)
+### PR Review Plugin (11 files)
 ```
 pr-review/
 ├── .claude-plugin/
@@ -245,16 +245,16 @@ pr-review/
 │   ├── security-reviewer.md          # Chuyên gia bảo mật
 │   ├── test-checker.md               # Chuyên gia test
 │   └── performance-analyzer.md       # Chuyên gia hiệu năng
-├── mcp/
-│   └── github-config.json            # Tích hợp GitHub
+├── .mcp.json                         # Tích hợp GitHub
 ├── hooks/
+│   ├── hooks.json                    # Đăng ký hook
 │   └── pre-review.js                 # Xác thực pre-review
 └── README.md                         # Tài liệu plugin
 ```
 
 **Tính Năng**: Phân tích bảo mật, độ phủ test, tác động hiệu năng
 
-**Commands**: `/review-pr`, `/check-security`, `/check-tests`
+**Commands**: `/pr-review:review-pr`, `/pr-review:check-security`, `/pr-review:check-tests`
 
 **Cài Đặt**: `claude --plugin-dir ./07-plugins/pr-review` (từ thư mục gốc của repo)
 
@@ -274,9 +274,8 @@ devops-automation/
 │   ├── deployment-specialist.md      # Chuyên gia triển khai
 │   ├── incident-commander.md         # Điều phối viên sự cố
 │   └── alert-analyzer.md             # Trình phân tích alert
-├── mcp/
-│   └── kubernetes-config.json        # Tích hợp Kubernetes
 ├── hooks/
+│   ├── hooks.json                    # Đăng ký hook
 │   ├── pre-deploy.js                 # Kiểm tra pre-deployment
 │   └── post-deploy.js                # Tasks post-deployment
 ├── scripts/
@@ -288,13 +287,13 @@ devops-automation/
 
 **Tính Năng**: Triển khai Kubernetes, rollback, giám sát, phản hồi sự cố
 
-**Commands**: `/deploy`, `/rollback`, `/status`, `/incident`
+**Commands**: `/devops-automation:deploy`, `/devops-automation:rollback`, `/devops-automation:status`, `/devops-automation:incident`
 
 **Cài Đặt**: `claude --plugin-dir ./07-plugins/devops-automation` (từ thư mục gốc của repo)
 
 ---
 
-### Documentation Plugin (14 files)
+### Documentation Plugin (13 files)
 ```
 documentation/
 ├── .claude-plugin/
@@ -308,8 +307,7 @@ documentation/
 │   ├── api-documenter.md             # Chuyên gia tài liệu API
 │   ├── code-commentator.md           # Chuyên gia comment code
 │   └── example-generator.md          # Trình tạo ví dụ
-├── mcp/
-│   └── github-docs-config.json       # Tích hợp GitHub
+├── .mcp.json                         # Tích hợp GitHub
 ├── templates/
 │   ├── api-endpoint.md               # Template API endpoint
 │   ├── function-docs.md              # Template tài liệu function
@@ -319,7 +317,7 @@ documentation/
 
 **Tính Năng**: Tài liệu API, tạo README, đồng bộ docs, xác thực
 
-**Commands**: `/generate-api-docs`, `/generate-readme`, `/sync-docs`, `/validate-docs`
+**Commands**: `/documentation:generate-api-docs`, `/documentation:generate-readme`, `/documentation:sync-docs`, `/documentation:validate-docs`
 
 **Cài Đặt**: `claude --plugin-dir ./07-plugins/documentation` (từ thư mục gốc của repo)
 
@@ -359,7 +357,7 @@ Lưu trạng thái conversation và khám phá các cách tiếp cận thay th�
 
 ---
 
-## 09. Tính Nâng Cao (3 files)
+## 09. Tính Năng Nâng Cao (3 files)
 
 Các khả năng nâng cao cho workflows phức tạp.
 
@@ -394,9 +392,9 @@ Các khả năng nâng cao cho workflows phức tạp.
 ### Permission Modes
 - **default**: Hỏi phê duyệt cho hành động rủi ro
 - **acceptEdits**: Tự động chấp nhận edits file, hỏi cho các khác
-- **plan**: Phân tích read-only, không sửa đổi
+- **plan**: Nghiên cứu và đề xuất thay đổi mà không thực hiện — Claude đọc file, chạy lệnh shell để khám phá và viết kế hoạch; việc chỉnh sửa bị chặn cho đến khi bạn duyệt kế hoạch (trừ phiên terminal tương tác có sẵn bypass permissions)
 - **auto**: Mọi thứ, với kiểm tra an toàn chạy nền — một classifier review các lệnh và thao tác ghi vào thư mục được bảo vệ (cấu hình qua đối tượng settings `autoMode`)
-- **dontAsk**: Chỉ các tool đã được phê duyệt trước — tự động từ chối mọi lệnh gọi lẽ ra sẽ hỏi. Claude chỉ chạy các mục khớp `permissions.allow`, các lệnh Bash chỉ-đọc, và các lệnh gọi được hook `PreToolUse` phê duyệt
+- **dontAsk**: Chỉ các tool đã được phê duyệt trước — tự động từ chối mọi lệnh gọi lẽ ra sẽ hỏi. Claude vẫn chạy các thao tác đọc file trong thư mục làm việc, các lệnh Bash chỉ-đọc, và phần lớn các lệnh gọi được một rule `permissions.allow` hoặc hook `PreToolUse` phê duyệt; một mod bạn đã cài cũng có thể phê duyệt một số lệnh gọi
 - **bypassPermissions**: Chấp nhận tất cả (bật bằng `--permission-mode bypassPermissions` hoặc `--dangerously-skip-permissions` tương đương)
 
 ### Headless Mode (`claude -p`)
@@ -592,9 +590,9 @@ claude-howto/
 │   │   │   ├── security-reviewer.md
 │   │   │   ├── test-checker.md
 │   │   │   └── performance-analyzer.md
-│   │   ├── mcp/
-│   │   │   └── github-config.json
+│   │   ├── .mcp.json
 │   │   ├── hooks/
+│   │   │   ├── hooks.json
 │   │   │   └── pre-review.js
 │   │   └── README.md
 │   ├── devops-automation/
@@ -609,9 +607,8 @@ claude-howto/
 │   │   │   ├── deployment-specialist.md
 │   │   │   ├── incident-commander.md
 │   │   │   └── alert-analyzer.md
-│   │   ├── mcp/
-│   │   │   └── kubernetes-config.json
 │   │   ├── hooks/
+│   │   │   ├── hooks.json
 │   │   │   ├── pre-deploy.js
 │   │   │   └── post-deploy.js
 │   │   ├── scripts/
@@ -631,8 +628,7 @@ claude-howto/
 │   │   │   ├── api-documenter.md
 │   │   │   ├── code-commentator.md
 │   │   │   └── example-generator.md
-│   │   ├── mcp/
-│   │   │   └── github-docs-config.json
+│   │   ├── .mcp.json
 │   │   ├── templates/
 │   │   │   ├── api-endpoint.md
 │   │   │   ├── function-docs.md
@@ -644,7 +640,7 @@ claude-howto/
 │   ├── checkpoint-examples.md
 │   └── README.md
 │
-├── 09-advanced-features/                        # Tính Nâng Cao
+├── 09-advanced-features/                        # Tính Năng Nâng Cao
 │   ├── config-examples.json
 │   ├── planning-mode-examples.md
 │   └── README.md
@@ -749,7 +745,7 @@ claude --permission-mode acceptEdits   # Tự động chấp nhận edits
 claude --permission-mode auto          # Tự động phê duyệt hành động an toàn
 
 # Chạy trong mode headless cho CI/CD
-claude -p "Chạy test và báo cáo kết quả"
+claude -p "Chạy test và báo cáo kết quả" --permission-mode auto
 
 # Chạy background tasks
 Chạy test trong background
@@ -759,7 +755,7 @@ Chạy test trong background
 
 ---
 
-## Ma Trận Phủ Sở Tính Năng
+## Ma Trận Phủ Sóng Tính Năng
 
 | Danh Mục | Commands | Agents | MCP | Hooks | Scripts | Templates | Docs | Images | Tổng |
 |----------|----------|--------|-----|-------|---------|-----------|------|--------|-------|
@@ -878,8 +874,8 @@ Muốn thêm ví dụ nữa? Theo cấu trúc:
 
 ---
 
-**Cập Nhật Lần Cuối**: Ngày 18 tháng 10 năm 2026
-**Phiên Bản Claude Code**: 2.1.302
+**Cập Nhật Lần Cuối**: Ngày 26 tháng 10 năm 2026
+**Phiên Bản Claude Code**: 2.1.310
 **Tổng Số Ví Dụ**: 100+ files
 **Danh Mục**: 10 tính năng
 **Hooks**: 8 scripts tự động hóa
@@ -894,3 +890,5 @@ Muốn thêm ví dụ nữa? Theo cấu trúc:
 - https://code.claude.com/docs/en/plugins/install
 - https://code.claude.com/docs/en/checkpointing
 - https://code.claude.com/docs/en/permission-modes
+- https://code.claude.com/docs/en/headless#auto-approve-tools
+- https://code.claude.com/docs/en/permission-modes#which-mode-a-non-interactive-run-starts-in

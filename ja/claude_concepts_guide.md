@@ -2296,8 +2296,8 @@ claude --plugin-dir ./07-plugins/pr-review
 # 結果：
 # ✅ 3 slash commands installed
 # ✅ 3 subagents configured
-# ✅ 2 MCP servers connected
-# ✅ 4 hooks registered
+# ✅ 1 MCP server connected
+# ✅ 1 hook registered
 # ✅ Ready to use!
 ```
 
@@ -2316,14 +2316,10 @@ devops-automation/
 │   ├── deployment-specialist.md
 │   ├── incident-commander.md
 │   └── alert-analyzer.md
-├── mcp/
-│   ├── github-config.json
-│   ├── kubernetes-config.json
-│   └── prometheus-config.json
 ├── hooks/
+│   ├── hooks.json
 │   ├── pre-deploy.js
-│   ├── post-deploy.js
-│   └── on-error.js
+│   └── post-deploy.js
 └── scripts/
     ├── deploy.sh
     ├── rollback.sh
@@ -2345,9 +2341,7 @@ documentation/
 │   ├── api-documenter.md
 │   ├── code-commentator.md
 │   └── example-generator.md
-├── mcp/
-│   ├── github-docs-config.json
-│   └── slack-announce-config.json
+├── .mcp.json
 └── templates/
     ├── api-endpoint.md
     ├── function-docs.md
@@ -2463,8 +2457,8 @@ Complete PR review workflow with security, testing, and documentation checks.
 ## What's Included
 - 3 slash commands for different review types
 - 3 specialized subagents
-- GitHub and CodeQL MCP integration
-- Automated security scanning hooks
+- GitHub MCP integration
+- A pre-review hook that checks the git repository
 
 ## Installation
 ```bash
@@ -2480,15 +2474,15 @@ claude --plugin-dir ./07-plugins/pr-review
 
 ## Usage
 ```bash
-/review-pr
-/check-security
-/check-tests
+/pr-review:review-pr
+/pr-review:check-security
+/pr-review:check-tests
 ```
 
 ## Requirements
 - Claude Code 2.1+
-- GitHub access
-- CodeQL (optional)
+- Node.js and Docker
+- A GitHub personal access token in `GITHUB_TOKEN`
 ~~~~
 
 ### プラグイン vs 手動設定
@@ -2979,7 +2973,7 @@ claude --permission-mode dontAsk       # 事前承認済みツールのみ。そ
 **使い方：**
 ```bash
 # 特定タスクを実行
-claude -p "Run all tests"
+claude -p "Run all tests" --permission-mode auto
 
 # 入力をパイプして解析
 cat error.log | claude -p "explain this error"
@@ -3059,7 +3053,7 @@ Claude Code は推論努力を調整可能な 3 モデルをサポートする�
 | モデル | コンテキストウィンドウ | 努力レベル | デフォルト努力（Claude Code） |
 |-------|----------------|---------------|------------------------------|
 | Claude Opus 4.7 | 1M トークン（ネイティブ） | `low`、`medium`、`high`、`xhigh`、`max` | `xhigh`（Opus 4.7 リリース時、2026-04-16 以降） |
-| Claude Sonnet 4.6 | 1M トークン | `low`、`medium`、`high`、`max` | Pro/Max 加入者では `high`（v2.1.117 で `medium` から引き上げ） |
+| Claude Sonnet 4.6 | 1M トークン | `low`、`medium`、`high`、`max` | `high`（v2.1.117 で Pro/Max 加入者向けに `medium` から引き上げ） |
 | Claude Haiku 4.5 | 200K トークン | `low`、`medium`、`high` | `medium` |
 
 > **注：** v2.1.117 では、Opus 4.7 セッションで `/context` がネイティブの 1M ではなく 200K に対して計算されていたバグが修正された。Opus 4.7 で本来の 1M コンテキストを使うには v2.1.117 以降にアップグレードすること。
@@ -3076,12 +3070,12 @@ Claude Code は推論努力を調整可能な 3 モデルをサポートする�
 ---
 
 *最終更新：2026 年 9 月 2 日*
-*対応：Claude Fable 5、Claude Opus 5、Claude Sonnet 5、Claude Sonnet 4.6、Claude Opus 4.8、Claude Haiku 4.5*
+*対応：Claude Fable 5.2、Claude Fable 5.1、Claude Fable 5、Claude Opus 5.5、Claude Opus 5、Claude Sonnet 5.5、Claude Sonnet 5、Claude Sonnet 4.6、Claude Opus 4.8、Claude Haiku 5.5、Claude Haiku 4.5*
 *収録機能：フック、チェックポイント、プラニングモード、拡張思考、バックグラウンドタスク、権限モード（6 種）、ヘッドレスモード、セッション管理、Auto Memory、Agent Teams、定期タスク、Chrome 連携、Channels、音声入力、同梱スキル*
 
 ---
-**最終更新：** 2026 年 10 月 18 日
-**Claude Code バージョン：** 2.1.302
+**最終更新：** 2026 年 11 月 1 日
+**Claude Code バージョン：** 2.1.316
 **出典：**
 - https://code.claude.com/docs/en/plugins/manifest-reference
 - https://code.claude.com/docs/en/plugins/create
@@ -3100,5 +3094,8 @@ Claude Code は推論努力を調整可能な 3 モデルをサポートする�
 - https://code.claude.com/docs/en/commands
 - https://code.claude.com/docs/en/permission-modes
 - https://code.claude.com/docs/en/hooks#userpromptexpansion
+- https://code.claude.com/docs/en/headless#auto-approve-tools
+- https://code.claude.com/docs/en/permission-modes#which-mode-a-non-interactive-run-starts-in
+- https://code.claude.com/docs/en/model-config#adjust-effort-level
 
-**対応モデル：** Claude Fable 5、Claude Opus 5、Claude Sonnet 5、Claude Sonnet 4.6、Claude Opus 4.8、Claude Haiku 4.5
+**対応モデル：** Claude Fable 5.2、Claude Fable 5.1、Claude Fable 5、Claude Opus 5.5、Claude Opus 5、Claude Sonnet 5.5、Claude Sonnet 5、Claude Sonnet 4.6、Claude Opus 4.8、Claude Haiku 5.5、Claude Haiku 4.5

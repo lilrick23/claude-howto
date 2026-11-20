@@ -246,7 +246,7 @@ blog-draft/
 
 Пакетні набори функціональності.
 
-### Плагін PR Review (10 файлів)
+### Плагін PR Review (11 файлів)
 
 ```
 pr-review/
@@ -260,16 +260,16 @@ pr-review/
 │   ├── security-reviewer.md          # Спеціаліст з безпеки
 │   ├── test-checker.md               # Спеціаліст з тестування
 │   └── performance-analyzer.md       # Спеціаліст з продуктивності
-├── mcp/
-│   └── github-config.json            # Інтеграція з GitHub
+├── .mcp.json                         # Інтеграція з GitHub
 ├── hooks/
+│   ├── hooks.json                    # Реєстрація хуків
 │   └── pre-review.js                 # Валідація перед ревʼю
 └── README.md                         # Документація плагіна
 ```
 
 **Можливості**: Аналіз безпеки, покриття тестами, вплив на продуктивність
 
-**Команди**: `/review-pr`, `/check-security`, `/check-tests`
+**Команди**: `/pr-review:review-pr`, `/pr-review:check-security`, `/pr-review:check-tests`
 
 **Встановлення**: `claude --plugin-dir ./07-plugins/pr-review` (з кореня репозиторію)
 
@@ -290,9 +290,8 @@ devops-automation/
 │   ├── deployment-specialist.md      # Експерт з розгортання
 │   ├── incident-commander.md         # Координатор інцидентів
 │   └── alert-analyzer.md             # Аналізатор сповіщень
-├── mcp/
-│   └── kubernetes-config.json        # Інтеграція з Kubernetes
 ├── hooks/
+│   ├── hooks.json                    # Реєстрація хуків
 │   ├── pre-deploy.js                 # Перевірки перед розгортанням
 │   └── post-deploy.js               # Дії після розгортання
 ├── scripts/
@@ -304,13 +303,13 @@ devops-automation/
 
 **Можливості**: Розгортання Kubernetes, відкат, моніторинг, реагування на інциденти
 
-**Команди**: `/deploy`, `/rollback`, `/status`, `/incident`
+**Команди**: `/devops-automation:deploy`, `/devops-automation:rollback`, `/devops-automation:status`, `/devops-automation:incident`
 
 **Встановлення**: `claude --plugin-dir ./07-plugins/devops-automation` (з кореня репозиторію)
 
 ---
 
-### Плагін Documentation (14 файлів)
+### Плагін Documentation (13 файлів)
 
 ```
 documentation/
@@ -325,8 +324,7 @@ documentation/
 │   ├── api-documenter.md             # Спеціаліст з API-документації
 │   ├── code-commentator.md           # Спеціаліст з коментарів
 │   └── example-generator.md          # Генератор прикладів
-├── mcp/
-│   └── github-docs-config.json       # Інтеграція з GitHub
+├── .mcp.json                         # Інтеграція з GitHub
 ├── templates/
 │   ├── api-endpoint.md               # Шаблон API-ендпоінту
 │   ├── function-docs.md              # Шаблон документації функцій
@@ -336,7 +334,7 @@ documentation/
 
 **Можливості**: API-документація, генерація README, синхронізація, валідація
 
-**Команди**: `/generate-api-docs`, `/generate-readme`, `/sync-docs`, `/validate-docs`
+**Команди**: `/documentation:generate-api-docs`, `/documentation:generate-readme`, `/documentation:sync-docs`, `/documentation:validate-docs`
 
 **Встановлення**: `claude --plugin-dir ./07-plugins/documentation` (з кореня репозиторію)
 
@@ -419,9 +417,9 @@ documentation/
 
 - **default**: Запитувати дозвіл на ризиковані дії
 - **acceptEdits**: Автоматично приймати редагування, запитувати інше
-- **plan**: Лише аналіз, без змін (тільки читання)
+- **plan**: Досліджує й пропонує зміни, не вносячи їх — Claude читає файли, виконує shell-команди для дослідження й пише план; редагування заблоковані, доки ви не схвалите план (крім інтерактивних терміналів, де доступний bypass permissions)
 - **auto**: Виконує все з фоновими перевірками безпеки — класифікатор перевіряє команди та запис у захищені каталоги (налаштовується через об'єкт `autoMode` у налаштуваннях)
-- **dontAsk**: Лише попередньо затверджені інструменти — автоматично відхиляє кожен виклик, який інакше вимагав би запиту. Claude виконує лише збіги з `permissions.allow`, Bash-команди лише для читання та виклики, схвалені хуком `PreToolUse`
+- **dontAsk**: Лише попередньо затверджені інструменти — автоматично відхиляє кожен виклик, який інакше вимагав би запиту. Claude і далі виконує читання файлів у робочих каталогах, Bash-команди лише для читання, більшість викликів, схвалених правилом `permissions.allow` або хуком `PreToolUse`; встановлений mod також може схвалити деякі виклики
 - **bypassPermissions**: Приймати все (вмикається через `--permission-mode bypassPermissions` або еквівалентний `--dangerously-skip-permissions`)
 
 ### Headless-режим (`claude -p`)
@@ -627,9 +625,9 @@ claude-howto/
 │   │   │   ├── security-reviewer.md
 │   │   │   ├── test-checker.md
 │   │   │   └── performance-analyzer.md
-│   │   ├── mcp/
-│   │   │   └── github-config.json
+│   │   ├── .mcp.json
 │   │   ├── hooks/
+│   │   │   ├── hooks.json
 │   │   │   └── pre-review.js
 │   │   └── README.md
 │   ├── devops-automation/
@@ -644,9 +642,8 @@ claude-howto/
 │   │   │   ├── deployment-specialist.md
 │   │   │   ├── incident-commander.md
 │   │   │   └── alert-analyzer.md
-│   │   ├── mcp/
-│   │   │   └── kubernetes-config.json
 │   │   ├── hooks/
+│   │   │   ├── hooks.json
 │   │   │   ├── pre-deploy.js
 │   │   │   └── post-deploy.js
 │   │   ├── scripts/
@@ -666,8 +663,7 @@ claude-howto/
 │   │   │   ├── api-documenter.md
 │   │   │   ├── code-commentator.md
 │   │   │   └── example-generator.md
-│   │   ├── mcp/
-│   │   │   └── github-docs-config.json
+│   │   ├── .mcp.json
 │   │   ├── templates/
 │   │   │   ├── api-endpoint.md
 │   │   │   ├── function-docs.md
@@ -790,7 +786,7 @@ claude --permission-mode acceptEdits   # Автоматично приймати
 claude --permission-mode auto          # Автоматично схвалювати безпечні дії
 
 # Запустити в headless-режимі для CI/CD
-claude -p "Run tests and report results"
+claude -p "Run tests and report results" --permission-mode auto
 
 # Запустити фонові завдання
 Run tests in background
@@ -934,8 +930,8 @@ Run tests in background
 
 ---
 
-**Останнє оновлення**: 18 жовтня 2026
-**Версія Claude Code**: 2.1.302
+**Останнє оновлення**: 26 жовтня 2026
+**Версія Claude Code**: 2.1.310
 **Прикладів**: 100+ файлів
 **Категорій**: 10 функцій
 **Хуків**: 8 скриптів автоматизації
@@ -950,3 +946,5 @@ Run tests in background
 - https://code.claude.com/docs/en/plugins/install
 - https://code.claude.com/docs/en/checkpointing
 - https://code.claude.com/docs/en/permission-modes
+- https://code.claude.com/docs/en/headless#auto-approve-tools
+- https://code.claude.com/docs/en/permission-modes#which-mode-a-non-interactive-run-starts-in

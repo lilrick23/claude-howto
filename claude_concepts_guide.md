@@ -560,15 +560,15 @@ Claude Code includes bundled skills available out of the box, including:
 | Skill | Command | Purpose |
 |-------|---------|---------|
 | **Batch** | `/batch` | Run operations across multiple files or items |
-| **Claude API** | `/claude-api` | Load Claude API and Managed Agents reference material for your project's language; activates automatically when your code imports `anthropic` or `@anthropic-ai/sdk` |
+| **Claude API** | `/claude-api` | Load Claude API and Managed Agents reference material for your project's language; activates automatically when your code imports `anthropic` or `@anthropic-ai/sdk`. Subcommands include `api-version` (v2.1.307), `managed-agents-secure` (v2.1.304) and `latency-optimize` (v2.1.319), which finds where your Claude API code makes people wait and tries faster settings against your eval |
 | **Code Review** | `/code-review` | Review the current diff for correctness bugs at a chosen effort level. A distinct skill from `/simplify` (quality/reuse cleanups), which was split back out in v2.1.154. Claude can also start it on its own, everywhere since v2.1.246 |
 | **Simplify** | `/simplify` | Quality, reuse, and cleanup review — distinct from `/code-review` again since v2.1.154 |
 | **Debug** | `/debug` | Turn on debug logging for the current session and troubleshoot by reading the session debug log |
 | **Fewer Permission Prompts** | `/fewer-permission-prompts` | Scan transcripts and propose a prioritized allowlist for common read-only tools |
 | **Loop** | `/loop` | Schedule recurring tasks on a timer |
-| **Run** | `/run` | Launch and drive the project's app to verify a change (v2.1.145+) |
-| **Run Skill Generator** | `/run-skill-generator` | Write a per-project skill that teaches `/run` and `/verify` how to build, launch, and drive your app (v2.1.145+) |
-| **Verify** | `/verify` | Verify that a change actually works (v2.1.145+). Explicit invocation only since v2.1.215 |
+| **Run** | `/run` | Launch and drive the project's app to verify a change |
+| **Run Skill Generator** | `/run-skill-generator` | Write a per-project skill that teaches `/run` and `/verify` how to build, launch, and drive your app |
+| **Verify** | `/verify` | Verify that a change actually works. Explicit invocation only since v2.1.215 |
 
 These bundled skills are always available and do not require installation or configuration.
 
@@ -743,7 +743,7 @@ Three complete, installable plugins live in **[07-plugins/](07-plugins/)**:
 
 - **`pr-review/`** — review commands, three specialist agents, GitHub MCP, and a pre-review hook
 - **`documentation/`** — doc generation commands, three agents, and reusable templates
-- **`devops-automation/`** — deploy/rollback/status/incident commands, three agents, Kubernetes MCP, and shell scripts
+- **`devops-automation/`** — deploy/rollback/status/incident commands, three agents, deploy hooks, and shell scripts
 
 Each includes its `.claude-plugin/plugin.json` manifest and directory layout.
 
@@ -847,7 +847,7 @@ graph TD
 
 ### Example Plugin README
 
-See the three complete plugins in **[07-plugins/](07-plugins/)** — `pr-review/`, `documentation/`, and `devops-automation/` each ship a full `README.md`, manifest, commands, agents, and MCP config you can copy wholesale.
+See the three complete plugins in **[07-plugins/](07-plugins/)** — `pr-review/`, `documentation/`, and `devops-automation/` each ship a full `README.md`, manifest, commands, and agents, plus MCP config, hooks, or both, that you can copy wholesale.
 
 ### Plugin vs Manual Configuration
 
@@ -1284,6 +1284,7 @@ Deep reasoning for complex problems.
 **Activation:**
 - Toggle with `Alt+T` (or `Option+T` on macOS) during a session
 - Opus 4.7+, Sonnet 5+, Haiku 5.5 and Fable always use adaptive reasoning, so a fixed `MAX_THINKING_TOKENS` budget does not apply; control depth with `/effort`
+- Type `ultrathink` in a prompt to run that one turn at `xhigh` effort on Opus 5.5, Sonnet 5.5, Haiku 5.5, Fable 5.2 (v2.1.321+) and Fable 5.1 through the Anthropic API (terminal v2.1.311+, VS Code v2.1.316+); `CLAUDE_CODE_DISABLE_ULTRATHINK` turns the keyword off
 
 ```bash
 # Control reasoning depth with the effort level
@@ -1336,8 +1337,8 @@ Run Claude Code without interactive input for automation and CI/CD using the `-p
 
 **Usage:**
 ```bash
-# Run specific task
-claude -p "Run all tests"
+# Run specific task (-p starts in Manual mode since v2.1.302, so pass a permission mode or --allowedTools)
+claude -p "Run all tests" --permission-mode auto
 
 # Pipe input for analysis
 cat error.log | claude -p "explain this error"
@@ -1352,7 +1353,7 @@ claude -p --output-format json "list all functions in src/"
 
 ### Scheduled Tasks
 
-Run tasks on a repeating schedule using the `/loop` command.
+Run session-scoped tasks on a repeating schedule using the `/loop` command. For schedules that outlive the session, use cloud scheduled tasks (formerly routines) with `/schedule`, or Desktop scheduled tasks.
 
 **Usage:**
 ```bash
@@ -1416,6 +1417,9 @@ Claude Code supports the following models with adaptive reasoning effort:
 
 | Model | Context Window | Effort Levels | Default Effort (Claude Code) |
 |-------|----------------|---------------|------------------------------|
+| Claude Fable 5.2 | 1M tokens (native) | `low`, `medium`, `high`, `xhigh`, `max` | `medium` — default Fable model since v2.1.321 (requires Claude Code v2.1.321+) |
+| Claude Fable 5.1 | 1M tokens (native) | `low`, `medium`, `high`, `xhigh`, `max` | `high` (requires Claude Code v2.1.257+) |
+| Claude Fable 5 | 1M tokens (native) | `low`, `medium`, `high`, `xhigh`, `max` | `high` |
 | Claude Opus 5.5 | 1M tokens (native) | `low`, `medium`, `high`, `xhigh`, `max` | `medium` — default model and default Opus model since v2.1.280 (requires Claude Code v2.1.280+) |
 | Claude Sonnet 5.5 | 1M tokens (native) | `low`, `medium`, `high`, `xhigh`, `max` | `medium` — default Sonnet model on the Anthropic API since v2.1.284 (requires Claude Code v2.1.284+) |
 | Claude Haiku 5.5 | 1M tokens (native) | `low`, `medium`, `high`, `xhigh`, `max` | `medium` — default Haiku model on the Anthropic API since v2.1.293 (requires Claude Code v2.1.293+) |
@@ -1423,10 +1427,10 @@ Claude Code supports the following models with adaptive reasoning effort:
 | Claude Sonnet 5 | 1M tokens (native) | `low`, `medium`, `high`, `xhigh`, `max` | `high` — default model for Pro/Team Standard from v2.1.197 until v2.1.280 (now Opus 5.5) |
 | Claude Opus 4.8 | 1M tokens (native) | `low`, `medium`, `high`, `xhigh`, `max` | `high` (since v2.1.154) |
 | Claude Opus 4.7 (legacy) | 1M tokens (native) | `low`, `medium`, `high`, `xhigh`, `max` | `xhigh` (since Opus 4.7 launch, 2026-04-16) |
-| Claude Sonnet 4.6 | 1M tokens | `low`, `medium`, `high`, `max` | `high` for Pro/Max subscribers (raised from `medium` in v2.1.117) |
+| Claude Sonnet 4.6 | 1M tokens | `low`, `medium`, `high`, `max` | `high` (raised from `medium` for Pro/Max subscribers in v2.1.117) |
 | Claude Haiku 4.5 | 200K tokens | — (no effort support) | — |
 
-> **Note**: `xhigh` is available on Opus 5.5, Sonnet 5.5, Haiku 5.5, Opus 5, Sonnet 5, Opus 4.8, and Opus 4.7; `max` works on Opus 5.5, Sonnet 5.5, Haiku 5.5, Opus 5, Sonnet 5, Opus 4.8/4.7/4.6 and Sonnet 4.6 (session-only). Haiku 4.5 does not support effort levels.
+> **Note**: `xhigh` is available on the Fable models, Opus 5.5, Sonnet 5.5, Haiku 5.5, Opus 5, Sonnet 5, Opus 4.8, and Opus 4.7; `max` works on the Fable models, Opus 5.5, Sonnet 5.5, Haiku 5.5, Opus 5, Sonnet 5, Opus 4.8/4.7/4.6 and Sonnet 4.6 (session-only). Haiku 4.5 does not support effort levels.
 
 > **Note**: v2.1.117 fixed a bug where Opus 4.7 sessions computed `/context` against 200K instead of the native 1M window — upgrade to v2.1.117 or later to actually get the 1M context on Opus 4.7. Opus 5 and Opus 4.8 also have a native 1M-token window.
 
@@ -1440,8 +1444,8 @@ Claude Code supports the following models with adaptive reasoning effort:
 - [Anthropic Cookbook](https://github.com/anthropics/anthropic-cookbook)
 
 ---
-**Last Updated**: October 18, 2026
-**Claude Code Version**: 2.1.302
+**Last Updated**: November 12, 2026
+**Claude Code Version**: 2.1.322
 **Sources**:
 - https://code.claude.com/docs/en/plugins/manifest-reference
 - https://code.claude.com/docs/en/plugins/create
@@ -1462,4 +1466,13 @@ Claude Code supports the following models with adaptive reasoning effort:
 - https://code.claude.com/docs/en/commands
 - https://code.claude.com/docs/en/remote-control
 - https://code.claude.com/docs/en/hooks#userpromptexpansion
-**Compatible Models**: Claude Fable 5.1, Claude Fable 5, Claude Opus 5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 4.5
+- https://code.claude.com/docs/en/headless#auto-approve-tools
+- https://code.claude.com/docs/en/permission-modes#which-mode-a-non-interactive-run-starts-in
+- https://code.claude.com/docs/en/routines
+- https://code.claude.com/docs/en/scheduled-tasks
+- https://code.claude.com/docs/en/changelog#2-1-307
+- https://code.claude.com/docs/en/skills#work-on-claude-api-projects
+- https://code.claude.com/docs/en/model-config#adjust-effort-level
+- https://code.claude.com/docs/en/model-config#use-ultrathink-for-one-off-deep-reasoning
+- https://code.claude.com/docs/en/changelog#2-1-319
+**Compatible Models**: Claude Fable 5.2, Claude Fable 5.1, Claude Fable 5, Claude Opus 5.5, Claude Opus 5, Claude Sonnet 5.5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 5.5, Claude Haiku 4.5

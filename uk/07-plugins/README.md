@@ -113,7 +113,7 @@ my-plugin/
 ├── .mcp.json             # Конфігурації MCP-серверів
 ├── .lsp.json             # Конфігурації LSP-серверів для інтелектуальної роботи з кодом
 ├── bin/                  # Виконувані файли, додані до PATH інструменту Bash поки плагін увімкнено
-├── settings.json         # Стандартні налаштування при увімкненні плагіна (діють лише ключі `agent` і `subagentStatusLine`)
+├── settings.json         # Стандартні налаштування при увімкненні плагіна (діє лише ключ `agent`, і цей ключ застарілий з v2.1.323)
 ├── templates/
 │   └── issue-template.md
 ├── scripts/
@@ -218,6 +218,8 @@ my-plugin/
 - **Інформація при наведенні** — сигнатури типів та документація при наведенні курсора
 - **Список символів** — перегляд символів у поточному файлі або робочому просторі
 
+Якщо мовний сервер плагіна не може запуститися, вкладка **Errors** у `/plugin` показує збій і його причину, а з v2.1.323 Claude Code також показує попередження, яке називає сервер і те, що варто перевірити.
+
 ## Опції плагіна (v2.1.83+)
 
 Плагіни можуть оголошувати користувацькі опції в маніфесті через `userConfig`. Значення з позначкою `sensitive: true` зберігаються у системному сховищі ключів (keychain), а не в текстових файлах налаштувань:
@@ -295,7 +297,7 @@ my-plugin/
 
 ## Налаштування плагіна
 
-Плагіни можуть постачатися з файлом `settings.json` для стандартної конфігурації. Діють два ключі, `agent` і `subagentStatusLine`; усі інші ключі відкидаються. `agent` приймає імʼя одного з агентів плагіна і запускає його як основний потік:
+Плагіни можуть постачатися з файлом `settings.json` для стандартної конфігурації. Діє лише ключ `agent`; усі інші ключі відкидаються. v2.1.323 прибрала налаштування `subagentStatusLine`, тож рядки субагентів завжди мають стандартний вигляд, а файл налаштувань, у якому цей ключ ще є, завантажується як раніше. `agent` приймає імʼя одного з агентів плагіна і запускає його як основний потік. З v2.1.323 цей ключ застарілий: він і далі діє, але Claude Code попереджає про нього під час запуску, у `claude plugin list` і в `claude plugin validate`:
 
 ```json
 {
@@ -335,9 +337,10 @@ my-plugin/
 
 **Файл:** `commands/review-pr.md`
 
+Цей файл стає командою `/pr-review:review-pr`: `name` плагіна плюс імʼя файлу.
+
 ```markdown
 ---
-name: Review PR
 description: Start comprehensive PR review with security and testing checks
 ---
 
@@ -370,17 +373,65 @@ Specializes in finding security vulnerabilities:
 - Secure configuration
 ```
 
+**Файл:** `hooks/hooks.json`
+
+Запускає `hooks/pre-review.js`, коли користувач вводить одну з команд плагіна. Скрипт блокує команду поза git-репозиторієм (код виходу 2). Matcher перевіряється на `command_name`, яке для команди плагіна в Claude Code 2.1.322 мало вигляд `pr-review:review-pr`; він також приймає просту форму `review-pr`. `args` (exec-форма) передає шлях до скрипта одним аргументом, тож лапки не потрібні:
+
+```json
+{
+  "hooks": {
+    "UserPromptExpansion": [
+      {
+        "matcher": "^(pr-review:)?(review-pr|check-security|check-tests)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/pre-review.js"],
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**Файл:** `.mcp.json`
+
+Оголошує офіційний MCP-сервер GitHub у режимі лише для читання, з токеном із `GITHUB_TOKEN`. Образ закріплено на тезі [релізу v2.1.0](https://github.com/github/github-mcp-server/releases/tag/v2.1.0), тож він змінюється лише тоді, коли ви змінюєте тег або видавець повторно публікує його. Закріплення за digest суворіше: замініть `:v2.1.0` на `@sha256:f6056fc10bfffcc8c81a6417a2e9ca12808647e8dd6049642a4feaadee0e0f8a` — digest v2.1.0 станом на 2026-11-12. Файл закріплює тег:
+
+```json
+{
+  "mcpServers": {
+    "github": {
+      "command": "docker",
+      "args": [
+        "run", "-i", "--rm",
+        "-e", "GITHUB_PERSONAL_ACCESS_TOKEN",
+        "-e", "GITHUB_READ_ONLY",
+        "ghcr.io/github/github-mcp-server:v2.1.0"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}",
+        "GITHUB_READ_ONLY": "1"
+      }
+    }
+  }
+}
+```
+
 **Встановлення:**
 
 ```bash
+claude plugin validate ./07-plugins/pr-review
 claude --plugin-dir ./07-plugins/pr-review
 
-# Результат:
-# ✅ 3 слеш-команди встановлено
-# ✅ 3 субагенти налаштовано
-# ✅ 2 MCP-сервери підключено
-# ✅ 4 хуки зареєстровано
-# ✅ Готово до використання!
+# Loads:
+# ✅ 3 slash commands: /pr-review:review-pr, /pr-review:check-security, /pr-review:check-tests
+# ✅ 3 subagents
+# ✅ 1 MCP server: plugin:pr-review:github
+# ✅ 1 hook: UserPromptExpansion → pre-review.js
 ```
 
 ### Приклад 2: Плагін DevOps
@@ -398,9 +449,8 @@ devops-automation/
 │   ├── deployment-specialist.md
 │   ├── incident-commander.md
 │   └── alert-analyzer.md
-├── mcp/
-│   └── kubernetes-config.json
 ├── hooks/
+│   ├── hooks.json        # PreToolUse/PostToolUse on Bash
 │   ├── pre-deploy.js
 │   └── post-deploy.js
 └── scripts/
@@ -408,6 +458,8 @@ devops-automation/
     ├── rollback.sh
     └── health-check.sh
 ```
+
+`hooks/hooks.json` запускає `pre-deploy.js` перед кожним викликом Bash і `post-deploy.js` після нього. Скрипти читають команду з JSON-входу хука й діють лише на команди розгортання, як-от `kubectl apply` чи `deploy.sh`. `pre-deploy.js` завершується з кодом 2, щоб заблокувати розгортання, коли `kubectl` не може дістатися кластера. Плагін не має MCP-сервера: хуки та скрипти викликають `kubectl` напряму.
 
 ### Приклад 3: Плагін документації
 
@@ -424,12 +476,11 @@ documentation/
 │   ├── api-documenter.md
 │   ├── code-commentator.md
 │   └── example-generator.md
-├── mcp/
-│   └── github-docs-config.json
-└── templates/
-    ├── api-endpoint.md
-    ├── function-docs.md
-    └── adr-template.md
+├── templates/
+│   ├── api-endpoint.md
+│   ├── function-docs.md
+│   └── adr-template.md
+└── .mcp.json             # GitHub MCP server
 ```
 
 ## Маркетплейс плагінів
@@ -538,6 +589,8 @@ graph TB
 | **npm** | `{ "source": "npm", "package": "..." }` | `{ "source": "npm", "package": "@acme/claude-plugin", "version": "^2.0" }` |
 
 Джерела GitHub та git підтримують необовʼязкові поля `ref` (гілка/тег) та `sha` (хеш коміту) для фіксації версій.
+
+Джерело **маркетплейсу** (`github` або `git`, у `extraKnownMarketplaces` або як `owner/repo@ref` під час додавання маркетплейсу) також приймає `ref`: гілку, тег або повний SHA коміту малими літерами на гілці чи тезі. Фіксація за SHA потребує v2.1.324 або новішої версії згідно з довідкою з маркетплейсів (changelog наводить її у v2.1.325) і відхиляється для зарезервованої назви маркетплейсу, як-от `claude-plugins-official`. Клієнти до цієї версії не можуть клонувати таку фіксацію, тож маркетплейс, зафіксований у такий спосіб, перестає там завантажуватися.
 
 ### Методи дистрибуції
 
@@ -728,6 +781,8 @@ claude --plugin-dir ./my-plugin --plugin-dir ./another-plugin
 
 > **Шаблони власника (v2.1.223+)**: запис `"owner/*"` дозволяє або блокує всі репозиторії маркетплейсів під одним власником GitHub. **Приймається лише у `strictKnownMarketplaces` та `blockedMarketplaces`.** Скрізь інде, де зʼявляється джерело `github` — включно з `extraKnownMarketplaces` і `/plugin marketplace add` — значення `repo` має вказувати на один репозиторій.
 
+> **Плагіни організації та `pluginDigests`**: плагіни віддаленого маркетплейсу, які керовані налаштування оголошують, вмикають і перелічують у `prependPlugins` або `appendPlugins`, тепер вважаються плагінами організації. Документація з адміністрування модів датує це v2.1.324; changelog наводить це у v2.1.325. З v2.1.325 `pluginDigests` застарів і ігнорується; це додає changelog, а документація цього ще не наводить.
+
 Ці налаштування можна застосувати на рівні організації через файли керованої конфігурації, і вони мають пріоритет над налаштуваннями рівня користувача.
 
 ## Безпека плагінів
@@ -765,8 +820,8 @@ Complete PR review workflow with security, testing, and documentation checks.
 ## What's Included
 - 3 slash commands for different review types
 - 3 specialized subagents
-- GitHub and CodeQL MCP integration
-- Automated security scanning hooks
+- GitHub MCP integration
+- A pre-review hook that checks the git repository
 
 ## Installation
 ```bash
@@ -781,16 +836,16 @@ claude --plugin-dir ./07-plugins/pr-review
 ✅ Performance impact analysis
 
 ## Usage
-```bash
-/review-pr
-/check-security
-/check-tests
+```text
+/pr-review:review-pr
+/pr-review:check-security
+/pr-review:check-tests
 ```
 
 ## Requirements
 - Claude Code 2.1+
-- GitHub access
-- CodeQL (optional)
+- Node.js and Docker
+- A GitHub personal access token in `GITHUB_TOKEN`
 ````
 
 ## Плагін vs ручна конфігурація
@@ -925,10 +980,10 @@ claude plugin update plugin-name
 ### Повний робочий процес плагіна PR Review
 
 ```
-1. Користувач: /review-pr
+1. Користувач: /pr-review:review-pr
 
 2. Плагін виконує:
-   ├── pre-review.js хук валідує git-репо
+   ├── pre-review.js хук (UserPromptExpansion) валідує git-репо
    ├── GitHub MCP отримує дані PR
    ├── security-reviewer субагент аналізує безпеку
    ├── test-checker субагент перевіряє покриття
@@ -959,7 +1014,7 @@ claude plugin update plugin-name
 - Переконайтеся, що змінні оточення встановлені правильно
 - Перевірте встановлення та працездатність MCP-сервера
 - Перевірте стан MCP-серверів за допомогою `/mcp`
-- Перегляньте конфігурацію MCP у каталозі `mcp/`
+- Перегляньте конфігурацію MCP у файлі `.mcp.json` плагіна
 
 ### Команди недоступні після встановлення
 - Переконайтеся, що плагін встановлено успішно: `/plugin list`
@@ -997,4 +1052,5 @@ claude plugin update plugin-name
 - https://code.claude.com/docs/en/plugins/components
 - https://code.claude.com/docs/en/plugins/publish
 - https://code.claude.com/docs/en/plugins/overview
-**Сумісні моделі**: Claude Fable 5, Claude Opus 5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 4.5
+- https://code.claude.com/docs/en/plugins/mods/admin#install-your-organizations-mods
+**Сумісні моделі**: Claude Fable 5.2, Claude Fable 5.1, Claude Fable 5, Claude Opus 5.5, Claude Opus 5, Claude Sonnet 5.5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 5.5, Claude Haiku 4.5

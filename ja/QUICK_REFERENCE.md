@@ -71,10 +71,10 @@ chmod +x ~/.claude/hooks/*.sh
 
 ### プラグイン
 ```bash
-# 例からインストール (公開済みなら)
-claude --plugin-dir ./07-plugins/pr-review
-/plugin install devops-automation
-/plugin install documentation
+# 例を 1 セッションだけ読み込む (リポジトリのルートから)
+claude --plugin-dir ./07-plugins/pr-review \
+  --plugin-dir ./07-plugins/devops-automation \
+  --plugin-dir ./07-plugins/documentation
 ```
 
 ### チェックポイント
@@ -156,7 +156,7 @@ cp -r 03-skills/code-review-specialist ~/.claude/skills/
 
 # 方法 4: プラグイン (推奨)
 claude --plugin-dir ./07-plugins/pr-review
-# 利用: /review-pr
+# 利用: /pr-review:review-pr
 ```
 
 ### ドキュメント
@@ -171,15 +171,15 @@ cp 04-subagents/documentation-writer.md .claude/agents/
 cp -r 03-skills/doc-generator ~/.claude/skills/
 
 # プラグイン (完全ソリューション)
-/plugin install documentation
+claude --plugin-dir ./07-plugins/documentation
 ```
 
 ### DevOps
 ```bash
 # 完全プラグイン
-/plugin install devops-automation
+claude --plugin-dir ./07-plugins/devops-automation
 
-# コマンド: /deploy、/rollback、/status、/incident
+# コマンド: /devops-automation:deploy、/devops-automation:rollback、/devops-automation:status、/devops-automation:incident
 ```
 
 ### チーム標準
@@ -228,7 +228,9 @@ claude --enable-auto-mode -p "Refactor and test the auth module"
 
 ### CI/CD 統合
 ```bash
-# ヘッドレスモードで実行 (非対話)
+# ヘッドレスモードで実行 (非対話)。権限モードを指定しないと -p は Manual モード
+# (設定値 "default"、v2.1.302+) で開始し、承認が必要なツール呼び出しは拒否されるため、
+# --allowedTools "Bash(npm test *)" または --permission-mode auto を追加する
 claude -p "Run all tests and generate report"
 
 # CI 用権限モードつき
@@ -382,9 +384,9 @@ cp -r 03-skills/code-review-specialist ~/.claude/skills/
 claude --plugin-dir ./07-plugins/pr-review
 
 # バンドル機能を使う
-/review-pr
-/check-security
-/check-tests
+/pr-review:review-pr
+/pr-review:check-security
+/pr-review:check-tests
 ```
 
 ---
@@ -405,7 +407,7 @@ claude --plugin-dir ./07-plugins/pr-review
 | **タスクリスト** | バックグラウンドタスクの管理 | `/tasks`（エイリアス `/bashes`） |
 | **Auto Memory** | 会話からの自動メモリ保存 | Claude が `~/.claude/projects/<project>/memory/MEMORY.md` にメモを保存。`/memory` で管理 |
 | **Git ワークツリー** | 並列開発のための隔離ワークスペース | `claude --worktree <name>`（または `-w`） |
-| **モデル選択** | Fable 5.1、Fable 5、Opus 5、Sonnet 5.5、Sonnet 5、Sonnet 4.6、Opus 4.8、Haiku 4.5 を切替 | `/model` または `--model` フラグ（Anthropic API では `sonnet` は Sonnet 5.5 を指す、v2.1.284+） |
+| **モデル選択** | Fable 5.2、Fable 5.1、Fable 5、Opus 5.5、Opus 5、Sonnet 5.5、Sonnet 5、Sonnet 4.6、Opus 4.8、Haiku 5.5、Haiku 4.5 を切替 | `/model` または `--model` フラグ（Anthropic API では `sonnet` は Sonnet 5.5 を指す、v2.1.284+） |
 | **Agent Teams** | タスク上の複数エージェントを協調 | 環境変数 `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` で有効化（実験的） |
 | **スケジュールタスク** | `/loop` による反復タスク | `/loop 5m /command` または CronCreate ツール |
 | **Chrome 連携** | ブラウザ自動化 | `--chrome` フラグまたは `/chrome` コマンド |
@@ -512,8 +514,8 @@ A：もちろん。カスタマイズ用のテンプレートである。
 **このカード**：手元に置いてクイックリファレンスとして！
 
 ---
-**最終更新**：2026 年 10 月 18 日
-**Claude Code バージョン**：2.1.302
+**最終更新**：2026 年 11 月 12 日
+**Claude Code バージョン**：2.1.322
 **情報源**：
 - https://code.claude.com/docs/en/overview
 - https://code.claude.com/docs/en/hooks
@@ -527,4 +529,7 @@ A：もちろん。カスタマイズ用のテンプレートである。
 - https://code.claude.com/docs/en/managed-settings
 - https://code.claude.com/docs/en/scheduled-tasks
 - https://code.claude.com/docs/en/model-config
-**互換モデル**：Claude Fable 5、Claude Opus 5、Claude Sonnet 5、Claude Sonnet 4.6、Claude Opus 4.8、Claude Haiku 4.5
+- https://code.claude.com/docs/en/headless
+- https://code.claude.com/docs/en/permission-modes#tool-calls-denied-in-claude-p-and-agent-sdk-runs
+- https://code.claude.com/docs/en/model-config#work-with-fable
+**互換モデル**：Claude Fable 5.2、Claude Fable 5.1、Claude Fable 5、Claude Opus 5.5、Claude Opus 5、Claude Sonnet 5.5、Claude Sonnet 5、Claude Sonnet 4.6、Claude Opus 4.8、Claude Haiku 5.5、Claude Haiku 4.5

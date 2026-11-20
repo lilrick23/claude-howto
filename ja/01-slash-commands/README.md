@@ -70,7 +70,7 @@
 | `/plugin` | プラグインを管理 |
 | `/proactive` | `/loop` のエイリアス（v2.1.105 で追加） |
 | `/powerup` | アニメーション付きデモのインタラクティブレッスンで機能を発見 |
-| `/privacy-settings` | プライバシー設定（Pro／Max のみ） |
+| `/privacy-settings` | プライバシー設定（Pro／Max／Ultra のみ） |
 | `/release-notes` | 変更履歴を表示 |
 | `/recap` | セッションへ戻ってきた際にセッションのおさらい／要約を表示（v2.1.108 で追加） |
 | `/reload-plugins` | アクティブなプラグインをリロード。v2.1.221 以降、ほとんどのインストールは即座に有効化されるため、インストール要約に `Run /reload-plugins to activate.` と表示された場合にのみ必要 |
@@ -85,15 +85,15 @@
 | `/security-review` | ブランチをセキュリティ脆弱性の観点で分析 |
 | `/skills` | 利用可能なスキルを一覧表示 |
 | `/stats` | `/usage` のタイピング用エイリアス — 統計タブ（日次使用量、セッション、ストリーク）を開く（v2.1.118+） |
-| `/stickers` | Claude Code のステッカーを注文 |
+| `/stickers` | Claude Code のステッカーが入手可能か確認 |
 | `/status` | バージョン、モデル、アカウントを表示 |
 | `/statusline` | ステータスラインを設定 |
 | `/tasks` | バックグラウンドタスクを一覧／管理 |
-| `/team-onboarding` | 過去 30 日間の Claude Code のセッション、コマンド、MCP 利用状況からチームメイト向けランプアップガイドを生成し、共有リンクを返す（v2.1.101 で新規） |
+| `/team-onboarding` | 過去 30 日間の Claude Code のセッション、コマンド、MCP 利用状況からチームメイト向けランプアップガイドを生成する。Team / Enterprise プランでは共有リンクも返す（v2.1.101 で新規） |
 | `/terminal-setup` | ターミナルのキーバインドを設定 |
 | `/theme` | テーマピッカーを開く／カスタムテーマを管理（v2.1.118）。カスタムテーマは `~/.claude/themes/<name>.json` に JSON で定義 |
 | `/tui [default\|fullscreen]` | ターミナル UI のレンダラーを設定して再起動する（`fullscreen` でちらつきのない描画）。引数なしの `/tui` は現在のレンダラーを表示（v2.1.110 で追加） |
-| `/ultrareview` | マルチエージェント分析による包括的なクラウドベースのコードレビュー（v2.1.111 で追加）。現在の推奨呼び出しは `/code-review ultra` で、`/ultrareview` はそのエイリアスとして残っている。Pro と Max では 3 回まで無料、以降は使用クレジットが必要 |
+| `/ultrareview` | マルチエージェント分析による包括的なクラウドベースのコードレビュー（v2.1.111 で追加）。現在の推奨呼び出しは `/code-review ultra` で、`/ultrareview` はそのエイリアスとして残っている。Pro、Max、Ultra では 3 回まで無料、以降は使用クレジットが必要 |
 | `/upgrade` | 上位プランへのアップグレードページを開く |
 | `/usage` | 正式な使用状況ダッシュボード（v2.1.118）— プラン使用量制限、レート制限、コスト、日次セッション統計を統合。`/cost` と `/stats` は特定のタブを開くタイピング用エイリアス |
 | `/voice` | プッシュトゥトーク音声入力を切り替え |
@@ -150,7 +150,7 @@
 
 > **v2.1.101 で新規追加**
 
-`/team-onboarding` を使うと、プロジェクトのローカルな Claude Code 利用状況からチームメイト向けランプアップガイドを生成できる。Claude は過去 30 日間のセッション、コマンド、MCP サーバーの利用状況を分析し、新しい開発者がすぐに生産的になれるオンボーディングガイドを作成して、その共有リンクを返す。
+`/team-onboarding` を使うと、プロジェクトのローカルな Claude Code 利用状況からチームメイト向けランプアップガイドを生成できる。Claude は過去 30 日間のセッション、コマンド、MCP サーバーの利用状況を分析し、新しい開発者がすぐに生産的になれるオンボーディングガイドを作成する。Team / Enterprise プランの claude.ai 契約者には、Claude Code で直接開ける共有リンクも返す。
 
 組み込みコマンドであり、インストール作業は不要である。
 
@@ -604,8 +604,8 @@ Deploy the application to production:
 
 ---
 
-**最終更新**: 2026 年 10 月 18 日
-**Claude Code バージョン**: 2.1.302
+**最終更新**: 2026 年 11 月 1 日
+**Claude Code バージョン**: 2.1.316
 **Sources**:
 - https://code.claude.com/docs/en/commands
 - https://code.claude.com/docs/en/output-styles
@@ -621,6 +621,8 @@ Deploy the application to production:
 - https://code.claude.com/docs/en/fullscreen
 - https://code.claude.com/docs/en/model-config
 - https://code.claude.com/docs/en/skills
-**Compatible Models**: Claude Sonnet 4.6, Claude Opus 4.7, Claude Haiku 4.5
+- https://code.claude.com/docs/en/commands#all-commands
+- https://code.claude.com/docs/en/feature-availability#ultra-plan
+**Compatible Models**: Claude Fable 5.2, Claude Fable 5.1, Claude Fable 5, Claude Opus 5.5, Claude Opus 5, Claude Sonnet 5.5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 5.5, Claude Haiku 4.5
 
 *[Claude How To](../) ガイドシリーズの一部*

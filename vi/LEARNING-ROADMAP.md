@@ -95,7 +95,7 @@ graph TD
 | **1** | [Lệnh Slash](01-slash-commands/) | ⭐ Người mới | 30 phút | Level 1 | None | Gains năng suất nhanh (55+ built-in + bundled skills) | Tự động hóa tức thì, tiêu chuẩn team |
 | **2** | [Bộ Nhớ](02-memory/) | ⭐⭐ Người mới+ | 45 phút | Level 1 | None | Thiết yếu cho tất cả tính năng | Ngữ cảnh lưu trữ, sở thích |
 | **3** | [Checkpoints](08-checkpoints/) | ⭐⭐ Trung cấp | 45 phút | Level 1 | Quản lý session | Khám phá an toàn | Thử nghiệm, phục hồi |
-| **4** | [CLI Cơ Bản](10-cli/) | ⭐⭐ Người mới+ | 30 phút | Level 1 | None | Sử dụng CLI cốt | Mode tương tác & print |
+| **4** | [CLI Cơ Bản](10-cli/) | ⭐⭐ Người mới+ | 30 phút | Level 1 | None | Sử dụng CLI cốt lõi | Mode tương tác & print |
 | **5** | [Skills](03-skills/) | ⭐⭐ Trung cấp | 1 giờ | Level 2 | Lệnh Slash | Chuyên môn tự động | Khả năng tái sử dụng, nhất quán |
 | **6** | [Hooks](06-hooks/) | ⭐⭐ Trung cấp | 1 giờ | Level 2 | Tools, Commands | Tự động hóa workflow (33 sự kiện, 5 types) | Xác thực, cổng chất lượng |
 | **7** | [MCP](05-mcp/) | ⭐⭐⭐ Trung cấp+ | 1 giờ | Level 2 | Cấu hình | Truy cập dữ liệu trực tiếp | Tích hợp thời gian thực, APIs |
@@ -161,7 +161,7 @@ Khi thoải mái, đọc:
 **Chủ Đề**: Checkpoints + CLI Cơ Bản
 **Thời Gian**: 1 giờ
 **Độ Phức Tạp**: ⭐⭐ Người mới+
-**Mục Tiêu**: Học thử nghiệm an toàn và sử dụng các commands CLI cốt
+**Mục Tiêu**: Học thử nghiệm an toàn và sử dụng các commands CLI cốt lõi
 
 #### Bạn Sẽ Đạt Được
 ✅ Tạo và khôi phục checkpoints để thử nghiệm an toàn
@@ -360,7 +360,7 @@ Trước khi bắt đầu Level 3, đảm bảo bạn thoải mái với các kh
 #### Bạn Sẽ Đạt Được
 ✅ Planning mode cho các tính năng phức tạp
 ✅ Kiểm soát permission chi tiết với 6 modes (default, acceptEdits, plan, auto, dontAsk, bypassPermissions)
-✅ Extended thinking qua Alt+T / Option+T toggle
+✅ Điều khiển extended thinking: `/effort` trên các model luôn dùng extended thinking, Alt+T / Option+T trên model cho phép tắt thinking
 ✅ Quản lý background tasks
 ✅ Auto Memory cho các sở thích đã học
 ✅ Auto Mode với bộ phân loại an toàn nền
@@ -380,15 +380,16 @@ claude --permission-mode plan "phân tích codebase này"
 claude --permission-mode acceptEdits "refactor module auth"
 claude --permission-mode auto "triển khai tính năng"
 
-# Exercise 3: Bật extended thinking
-# Nhấn Alt+T (Option+T trên macOS) trong session để toggle
+# Exercise 3: Điều khiển extended thinking
+# Chạy /effort và chọn mức; Opus 5.5, Sonnet 5.5, Haiku 5.5 và các model Fable luôn dùng extended thinking
+# Alt+T (Option+T trên macOS) chỉ bật/tắt thinking trên model cho phép, ví dụ claude-opus-5
 
 # Exercise 4: Workflow checkpoint nâng cao
-# 1. Tạo checkpoint "Trạng thái sạch"
+# 1. Bắt đầu từ trạng thái sạch (Claude Code tự tạo checkpoint cho mỗi prompt; checkpoint không đặt tên được)
 # 2. Sử dụng planning mode để thiết kế một tính năng
 # 3. Triển khai với ủy quyền subagent
 # 4. Chạy tests trong background
-# 5. Nếu tests thất bại, rewind về checkpoint
+# 5. Nếu tests thất bại, /rewind về checkpoint trước bước 2
 # 6. Thử cách tiếp cận thay thế
 
 # Exercise 5: Thử auto mode (background safety classifier)
@@ -400,7 +401,7 @@ export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
 
 # Exercise 7: Tasks định kỳ
 /loop 5m /check-status
-# Tasks chỉ tồn tại trong session; để lên lịch lâu dài hãy dùng Routines hoặc Desktop scheduled tasks
+# Tasks chỉ tồn tại trong session; để lên lịch lâu dài hãy dùng cloud scheduled tasks (trước đây là routines, qua /schedule) hoặc Desktop scheduled tasks
 
 # Exercise 8: Channels (research preview)
 # Channel là một MCP server đẩy sự kiện vào session đang chạy của bạn
@@ -412,7 +413,7 @@ export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
 #### Tiêu Chí Thành Công
 - [ ] Đã sử dụng planning mode cho một tính năng phức tạp
 - [ ] Đã cấu hình permission modes (plan, acceptEdits, auto, dontAsk)
-- [ ] Đã toggle extended thinking với Alt+T / Option+T
+- [ ] Đã đặt mức thinking bằng `/effort` (và toggle thinking bằng Alt+T / Option+T trên model cho phép)
 - [ ] Đã sử dụng auto mode với background safety classifier
 - [ ] Đã sử dụng background tasks cho operations dài
 - [ ] Đã khám phá Channels đẩy sự kiện bên ngoài vào session
@@ -449,7 +450,7 @@ export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
 claude --plugin-dir ./07-plugins/pr-review  # từ thư mục gốc của repo
 
 # Exercise 2: Print mode cho CI/CD
-claude -p "Chạy tất cả tests và tạo báo cáo"
+claude -p "Chạy tất cả tests và tạo báo cáo" --permission-mode auto
 
 # Exercise 3: Output JSON cho scripts
 claude -p --output-format json "liệt kê tất cả functions"
@@ -482,7 +483,7 @@ Tạo một script CI/CD đơn giản:
 - [ ] Đã tạo một script xử lý hàng loạt
 - [ ] Đã tích hợp Claude vào một workflow CI/CD
 
-#### Use Cases Thực Te Cho CLI
+#### Use Cases Thực Tế Cho CLI
 - **Tự Động Hóa Review Code**: Chạy code reviews trong pipelines CI/CD
 - **Phân Tích Log**: Phân tích error logs và outputs hệ thống
 - **Tạo Tài Liệu**: Tạo tài liệu hàng loạt
@@ -592,7 +593,7 @@ Repository này bao gồm hai skills tương tác bạn có thể sử dụng b�
 ## 🎓 Phong Cách Học
 
 ### Người Học Qua Hình Ảnh
-- Nghiên các mermaid diagrams trong mỗi README
+- Nghiên cứu các mermaid diagrams trong mỗi README
 - Theo dõi flow thực thi command
 - Vẽ workflow diagrams của riêng bạn
 - Sử dụng learning path hình ảnh ở trên
@@ -605,7 +606,7 @@ Repository này bao gồm hai skills tương tác bạn có thể sử dụng b�
 
 ### Người Học Đọc
 - Đọc mỗi README một cách kỹ lưỡng
-- Nghiên các ví dụ code
+- Nghiên cứu các ví dụ code
 - Review các bảng so sánh
 - Đọc các blog posts được liên kết trong resources
 
@@ -732,8 +733,8 @@ Khi bạn đã hoàn thành tất cả milestones:
 
 ---
 
-**Cập Nhật Lần Cuối**: Ngày 18 tháng 10 năm 2026
-**Phiên Bản Claude Code**: 2.1.302
+**Cập Nhật Lần Cuối**: Ngày 26 tháng 10 năm 2026
+**Phiên Bản Claude Code**: 2.1.310
 **Nguồn**:
 - https://code.claude.com/docs/en/hooks
 - https://code.claude.com/docs/en/agent-teams
@@ -744,6 +745,9 @@ Khi bạn đã hoàn thành tất cả milestones:
 - https://code.claude.com/docs/en/scheduled-tasks
 - https://code.claude.com/docs/en/commands
 - https://code.claude.com/docs/en/sub-agents
+- https://code.claude.com/docs/en/routines#where-the-name-routines-still-appears
+- https://code.claude.com/docs/en/headless#auto-approve-tools
+- https://code.claude.com/docs/en/permission-modes#which-mode-a-non-interactive-run-starts-in
 **Được Duy Trì Bởi**: Những người đóng góp Claude How-To
 **Giấy Phép**: Mục đích giáo dục, miễn phí sử dụng và điều chỉnh
 

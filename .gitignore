@@ -100,3 +100,7 @@ scripts/.vendor-cache/
 # Local agent/tooling state
 .asm-improver/
 .gitissue/
+.idd/
+
+# Personal Claude Code instructions (learners and contributors)
+CLAUDE.local.md

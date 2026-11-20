@@ -93,9 +93,9 @@
 ### Q1
 - **Category**: conceptual
 - **Question**: How do CLAUDE.md memory files relate to each other, and what has the highest authority?
-- **Options**: A) Higher tiers override lower tiers entirely | B) They are concatenated into context; Managed Policy loads first and cannot be excluded | C) The most recently modified file wins | D) Project Memory has the highest priority
+- **Options**: A) Higher tiers override lower tiers entirely | B) They are concatenated into context; Managed Policy loads first and can't be skipped with `claudeMdExcludes` | C) The most recently modified file wins | D) Project Memory has the highest priority
 - **Correct**: B
-- **Explanation**: CLAUDE.md files are concatenated into context rather than overriding each other — load order sets position in context, not precedence. Managed Policy (admin-managed) loads first and cannot be excluded by individual settings. Auto memory is a separate mechanism.
+- **Explanation**: CLAUDE.md files are concatenated into context rather than overriding each other — load order sets position in context, not precedence. Managed Policy (admin-managed) loads first and can't be skipped with `claudeMdExcludes`, but a session started with CLAUDE.md loading turned off doesn't load it either — enforce hard rules with managed `permissions.deny`. Auto memory is a separate mechanism.
 - **Review**: Memory hierarchy section
 
 ### Q2
@@ -159,7 +159,7 @@
 - **Question**: Can a lower-priority memory tier override rules from a higher-priority tier?
 - **Options**: A) Yes, the most recent rule always wins | B) No — CLAUDE.md files are concatenated into context, not overridden; load order sets position, not precedence | C) Yes, if the lower tier uses the `!important` flag | D) It depends on the rule type
 - **Correct**: B
-- **Explanation**: CLAUDE.md files (user, project, local, rules) are concatenated into context rather than overriding each other — later files appear later in context, not "instead of" earlier ones. Only Managed Policy is special: it loads first and cannot be excluded by individual settings. Auto memory is a separate mechanism, not part of the concatenation order.
+- **Explanation**: CLAUDE.md files (user, project, local, rules) are concatenated into context rather than overriding each other — later files appear later in context, not "instead of" earlier ones. Only Managed Policy is special: it loads first and can't be skipped with `claudeMdExcludes`, but a session started with CLAUDE.md loading turned off doesn't load it either — enforce hard rules with managed `permissions.deny`. Auto memory is a separate mechanism, not part of the concatenation order.
 - **Review**: Memory hierarchy section
 
 ### Q10
@@ -220,7 +220,7 @@
 - **Options**: A) Inline in SKILL.md | B) In a `references/api-spec.md` file inside the skill directory | C) In the project's CLAUDE.md | D) In a separate `.claude/rules/` file
 - **Correct**: B
 - **Explanation**: Large reference material belongs in the `references/` subdirectory. Claude loads Level 3 resources on demand, keeping SKILL.md lean.
-- **Review**: Supporting files structure section
+- **Review**: Supporting Files section
 
 ### Q7
 - **Category**: conceptual
@@ -303,7 +303,7 @@
 - **Question**: How do you force a subagent to always run in the background (never inline)?
 - **Options**: A) Set `background: true` in the agent config | B) Use `async: true` in the agent config | C) Press Ctrl+D after starting it | D) Use `--background` CLI flag
 - **Correct**: A
-- **Explanation**: `background: true` in the agent configuration makes the subagent always run as a background task and prevents it from running inline. Subagents Claude spawns from the main conversation already run in the background by default (v2.1.198; always, in the desktop app and VS Code, since v2.1.302), but a subagent's own nested Agent calls run in the foreground by default in `claude -p`, the Agent SDK, the desktop app and VS Code. Users can also press Ctrl+B to send a running foreground task to the background.
+- **Explanation**: `background: true` keeps this subagent in the background even when Claude asks to wait for it. With nothing configured, subagents Claude spawns from the main conversation already start in the background. In `claude -p` and the Agent SDK, Claude can still choose to wait for one. In interactive terminal, VS Code and desktop sessions, Claude can't wait while fork mode is on, which is the default (v2.1.302; v2.1.232 in the terminal); set `CLAUDE_CODE_FORK_SUBAGENT=0` to let it wait. Users can also press Ctrl+B to send a running foreground task to the background.
 - **Review**: Background subagents section
 
 ### Q7
@@ -335,7 +335,7 @@
 - **Question**: How do you resume a subagent that returned an agentId from a previous run?
 - **Options**: A) Use `/resume agent-id` | B) Ask Claude to resume it — Claude messages the subagent with the SendMessage tool, using its agent ID or name | C) Use `claude -r agent-id` | D) Subagents cannot be resumed
 - **Correct**: B
-- **Explanation**: Each invocation starts a new instance. To continue earlier work, ask Claude to resume the subagent: Claude uses the SendMessage tool with the agent's ID or name, and the subagent resumes with its full conversation history. The built-in Explore and Plan agents are one-shot and can't be resumed.
+- **Explanation**: Each invocation starts a new instance. To continue earlier work, ask Claude to resume the subagent: Claude uses the SendMessage tool with the agent's ID (or its name, if the session started with agent teams enabled and Claude named it), and the subagent resumes with its full conversation history. The built-in Explore and Plan agents are one-shot and can't be resumed.
 - **Review**: Resumable agents section
 
 ---
@@ -363,7 +363,7 @@
 - **Question**: With `ENABLE_TOOL_SEARCH=auto`, what happens when MCP tool definitions reach 10% of the context window?
 - **Options**: A) They are truncated | B) Tool search kicks in: MCP tools are deferred and discovered on demand | C) Claude shows an error | D) Extra tools are disabled
 - **Correct**: B
-- **Explanation**: By default (`ENABLE_TOOL_SEARCH` unset) tool search is already on and all MCP tools are deferred. `auto` is threshold mode: tools load upfront until their definitions reach 10% of the context window, then all are deferred (`auto:N` sets a custom percentage). Tool search needs a model that supports `tool_reference` blocks: Opus 4, Sonnet 4, Haiku 4.5 and later.
+- **Explanation**: By default (`ENABLE_TOOL_SEARCH` unset) tool search is already on and all MCP tools are deferred. `auto` is threshold mode: tools load upfront until their definitions reach 10% of the context window, then all are deferred (`auto:N` sets a custom percentage). Tool search needs a model that supports `tool_reference` blocks: Opus 4, Sonnet 4, Haiku 4.5 and later. Tool search is on by default, including behind a custom `ANTHROPIC_BASE_URL` gateway since v2.1.304 (since v2.1.305 a gateway that rejects it with a 400 or 422 is retried without it); set `ENABLE_TOOL_SEARCH=false` to load every tool upfront.
 - **Review**: MCP Tool Search section
 
 ### Q4
@@ -371,7 +371,7 @@
 - **Question**: How do you use environment variable fallbacks in MCP config?
 - **Options**: A) `${VAR || "default"}` | B) `${VAR:-default}` | C) `${VAR:default}` | D) `${VAR ? "default"}`
 - **Correct**: B
-- **Explanation**: `${VAR:-default}` provides a fallback value if the environment variable is not set. If `VAR` is unset and has no default, the server still loads with the literal `${VAR}` text, and `claude mcp list` and `/mcp` warn about the missing variable.
+- **Explanation**: `${VAR:-default}` provides a fallback value if the environment variable is not set. A variable set to an empty string counts as set, so the reference expands to the empty string rather than to `default`; unset the variable to get the default. If `VAR` is unset and has no default, the server still loads with the literal `${VAR}` text, and `claude mcp list` and `/mcp` warn about the missing variable.
 - **Review**: Environment variable expansion section
 
 ### Q5
@@ -563,7 +563,7 @@
 - **Question**: What does the `settings.json` `agent` key do in a plugin?
 - **Options**: A) Specifies authentication credentials | B) Sets the main thread agent for the plugin | C) Lists available subagents | D) Configures agent permissions
 - **Correct**: B
-- **Explanation**: The `agent` key in a plugin's settings.json specifies which agent definition to use as the main thread agent when the plugin is active.
+- **Explanation**: The `agent` key in a plugin's settings.json specifies which agent definition to use as the main thread agent when the plugin is active. Since v2.1.323 the key is deprecated: it still applies, but Claude Code warns about it at startup, in `claude plugin list` and in `claude plugin validate`.
 - **Review**: Plugin Settings section
 
 ### Q8
@@ -615,15 +615,15 @@
 - **Question**: How many rewind options are available, and what are they?
 - **Options**: A) 3: Undo, Redo, Reset | B) 6: Restore code+conversation, Restore conversation, Restore code, Summarize from here, Summarize up to here, Never mind | C) 2: Full restore, Partial restore | D) 4: Code, Messages, Both, Cancel
 - **Correct**: B
-- **Explanation**: The 6 options are: Restore code and conversation (full rollback), Restore conversation only, Restore code only, Summarize from here (compress forward), Summarize up to here (compress backward), Never mind (cancel). The two summary options give bidirectional context compaction.
+- **Explanation**: The 6 options are: Restore code and conversation (full rollback), Restore conversation only, Restore code only, Summarize from here (compress forward), Summarize up to here (compress backward), Never mind (cancel). The two summary options give bidirectional context compaction. The menu can show fewer: the two code-restore options appear only when the selected checkpoint has tracked file changes to revert, and both Summarize options are hidden when `DISABLE_COMPACT` is set (v2.1.311).
 - **Review**: Rewind options section
 
 ### Q4
 - **Category**: practical
-- **Question**: You used `rm -rf temp/` via Bash in Claude Code, then want to rewind. Will the checkpoint restore those files?
-- **Options**: A) Yes, checkpoints capture everything | B) No, Bash filesystem operations (rm, mv, cp) are not tracked by checkpoints | C) Only if you used the Edit tool instead | D) Only if autoCheckpoint was enabled
+- **Question**: Claude created `temp/` with Bash commands only (it never edited those files with its Write or Edit tools), then ran `rm -rf temp/`. Will `/rewind` restore them?
+- **Options**: A) Yes, checkpoints capture everything | B) No — a file that only Bash commands changed isn't tracked, so rewind leaves it as it is | C) Only if you rewind within 5 minutes | D) Only if autoCheckpoint was enabled
 - **Correct**: B
-- **Explanation**: Checkpoints track file changes made by Claude's own Write/Edit tools in the main thread. Bash commands (rm, mv, cp), subagent edits (except a foreground `context: fork` skill), edits made outside Claude Code, and symlinked/hardlinked paths are all outside checkpoint tracking.
+- **Explanation**: Checkpoints track edits made by Claude's file editing tools. Once Claude has edited a file with its file editing tools, `/rewind` also undoes changes that Bash commands make to that file afterward. A file that only Bash commands changed, like `temp/` here, isn't tracked and stays as it is, so use Git to recover it. Since v2.1.309, `sed -i` is treated like any other Bash edit. Edits by a subagent (other than a foreground `context: fork` skill) are restored only for files Claude had already edited in the conversation. Symlinked and hard-linked paths are skipped on restore.
 - **Review**: Limitations section
 
 ### Q5
@@ -715,7 +715,7 @@
 - **Question**: Does the "ultrathink" keyword trigger deep reasoning?
 - **Options**: A) Yes, it triggers deep reasoning for one response without changing session settings | B) No, it's treated as regular prompt text | C) Yes, but only on Opus 4.6 | D) Yes, and it permanently changes the effort level
 - **Correct**: A
-- **Explanation**: Including "ultrathink" in your prompt adds an in-context instruction for the model to reason more on that turn. It does not change the effort level sent to the API—use `/effort max` for session-level deep reasoning.
+- **Explanation**: Including "ultrathink" in your prompt adds an in-context instruction for the model to reason more on that turn, without changing your session effort setting. Since v2.1.311, typed in the interactive terminal on Opus 5.5, Sonnet 5.5, Haiku 5.5, Fable 5.2 (v2.1.321+), or Fable 5.1 through Anthropic's API, it also runs that turn at `xhigh` effort, and the word shows in rainbow colors when it can (the VS Code extension does the same since v2.1.316). Typed while Claude is working, it raises the rest of that turn. `CLAUDE_CODE_DISABLE_ULTRATHINK` turns the keyword off (v2.1.316). Use `/effort max` for session-level deep reasoning.
 - **Review**: Extended Thinking section
 
 ### Q6
@@ -723,7 +723,7 @@
 - **Question**: How do you run Claude in a CI/CD pipeline with structured JSON output and a turn limit?
 - **Options**: A) `claude --ci --json --limit 3` | B) `claude -p --output-format json --max-turns 3 "review code"` | C) `claude --pipeline --format json` | D) `claude run --json --turns 3`
 - **Correct**: B
-- **Explanation**: Print mode (`-p`) with `--output-format json` and `--max-turns` is the standard CI/CD integration pattern.
+- **Explanation**: Print mode (`-p`) with `--output-format json` and `--max-turns` is the standard CI/CD integration pattern. Since v2.1.302, a `claude -p` or Agent SDK run with no permission mode set starts in Manual mode (config value `default`) and denies tool calls that need approval; pass `--permission-mode` (for example `auto` or `acceptEdits`) or `--allowedTools`.
 - **Review**: Headless Mode
 
 ### Q7
@@ -731,7 +731,7 @@
 - **Question**: What does the Task List feature (Ctrl+T) provide?
 - **Options**: A) A list of running background processes | B) A persistent to-do list that survives context compaction, shareable via `CLAUDE_CODE_TASK_LIST_ID` | C) A history of past sessions | D) A queue of pending tool calls
 - **Correct**: B
-- **Explanation**: The Task List (Ctrl+T) is persistent across context compactions and can be shared across sessions via named task directories using `CLAUDE_CODE_TASK_LIST_ID`.
+- **Explanation**: The Task List (Ctrl+T) is persistent across context compactions and can be shared across sessions via named task directories using `CLAUDE_CODE_TASK_LIST_ID`. It fills only in sessions that have the task-tracking tools, which, outside background and cloud sessions, Claude Code provides by default only on Opus 4.7, Sonnet 4.6, Haiku 4.5, and earlier models; on Opus 5.5, Sonnet 5.5, Haiku 5.5, and the Fable models it stays empty unless you opt in, for example with `CLAUDE_CODE_ENABLE_TODO_TOOLS=1` (v2.1.233+).
 - **Review**: Task List section
 
 ### Q8
@@ -747,7 +747,7 @@
 - **Question**: What is the difference between `dontAsk` and `bypassPermissions` modes?
 - **Options**: A) They are the same | B) `dontAsk` auto-denies unless pre-approved; `bypassPermissions` skips all checks entirely | C) `dontAsk` is for files; `bypassPermissions` is for commands | D) `bypassPermissions` is safer
 - **Correct**: B
-- **Explanation**: dontAsk auto-denies permission requests unless they match pre-approved patterns. bypassPermissions skips all safety checks entirely — it's dangerous for routine use.
+- **Explanation**: dontAsk auto-denies permission requests unless they match pre-approved patterns (a mod you installed can still approve some of those calls). bypassPermissions skips all safety checks entirely — it's dangerous for routine use.
 - **Review**: Permission Modes section
 
 ### Q10
@@ -844,8 +844,8 @@
 
 ---
 
-**Last Updated**: October 18, 2026
-**Claude Code Version**: 2.1.302
+**Last Updated**: November 13, 2026
+**Claude Code Version**: 2.1.323
 **Sources**:
 - https://code.claude.com/docs/en/hooks
 - https://code.claude.com/docs/en/skills
@@ -869,3 +869,15 @@
 - https://code.claude.com/docs/en/mcp#example-connect-to-github-for-code-reviews
 - https://code.claude.com/docs/en/changelog#2-1-302
 - https://code.claude.com/docs/en/interactive-mode
+- https://code.claude.com/docs/en/checkpointing#bash-command-changes-not-tracked
+- https://code.claude.com/docs/en/changelog#2-1-309
+- https://code.claude.com/docs/en/memory#deploy-organization-wide-claude-md
+- https://code.claude.com/docs/en/sub-agents#which-subagents-run-in-the-background
+- https://code.claude.com/docs/en/mcp#tool-search-through-an-llm-gateway
+- https://code.claude.com/docs/en/sub-agents#resume-subagents
+- https://code.claude.com/docs/en/model-config#use-ultrathink-for-one-off-deep-reasoning
+- https://code.claude.com/docs/en/changelog#2-1-311
+- https://code.claude.com/docs/en/changelog#2-1-316
+- https://code.claude.com/docs/en/checkpointing#rewind-and-summarize
+- https://code.claude.com/docs/en/mcp#variables-set-to-an-empty-string
+- https://code.claude.com/docs/en/changelog#2-1-323

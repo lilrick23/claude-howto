@@ -33,12 +33,12 @@ graph TD
 
 ## Usage
 
-```
+```text
 /lesson-quiz [lesson-name-or-number]
 ```
 
 Examples:
-```
+```text
 /lesson-quiz hooks
 /lesson-quiz 03
 /lesson-quiz advanced-features
@@ -48,7 +48,7 @@ Examples:
 ## Output
 
 ### Score Report
-- Total score out of 10 with grade (Mastered / Proficient / Developing / Beginning)
+- Total score out of 10 with grade (Mastered / Proficient / Developing / Beginning / Not yet)
 - Breakdown by question category (conceptual vs. practical)
 
 ### Per-Question Feedback
@@ -67,3 +67,13 @@ For each incorrect answer:
 | Path | Description |
 |---|---|
 | `references/question-bank.md` | 100 pre-written questions (10 per lesson) with answers, explanations, and review pointers |
+
+---
+
+**Last Updated**: November 1, 2026
+**Claude Code Version**: 2.1.316
+**Sources**:
+- https://code.claude.com/docs/en/mcp#tool-search-through-an-llm-gateway
+- https://code.claude.com/docs/en/sub-agents#resume-subagents
+- https://code.claude.com/docs/en/permission-modes
+- https://code.claude.com/docs/en/changelog#2-1-311
